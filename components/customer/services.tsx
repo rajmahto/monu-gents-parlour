@@ -18,9 +18,8 @@ export const CustomerServicesPage = ({ onNavigate }: { onNavigate?: (tab: any) =
   const { isDarkMode, services, isOnline, bookToken, estWaitMins } = useSalon() as any;
   const theme = getTheme(isDarkMode);
 
-  const dynamicBorderColor = isDarkMode ? '#3F3F46' : '#E4E4E7';
+  const dynamicBorderColor = isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
 
-  // Booking Form States
   const [custName, setCustName] = useState('');
   const [custPhone, setCustPhone] = useState('');
   const [selectedService, setSelectedService] = useState<ServiceItem>(services[0]);
@@ -163,7 +162,7 @@ export const CustomerServicesPage = ({ onNavigate }: { onNavigate?: (tab: any) =
 };
 
 const styles = StyleSheet.create({
-  scrollPad: { paddingHorizontal: 20, paddingBottom: 160, paddingTop: 10 },
+  scrollPad: { paddingHorizontal: 20, paddingBottom: 180, paddingTop: 10 },
   headerBlock: { marginBottom: 18 },
   pageMainTitle: { fontSize: 24, fontWeight: '900', letterSpacing: 0.3 },
   pageSubTitle: { fontSize: 13, fontWeight: '700', marginTop: 3 },

@@ -166,7 +166,7 @@ export const OwnerEarningsPage = () => {
         })}
       </View>
 
-      {/* MAIN TOTAL STORE REVENUE COUNTER */}
+      {/* MAIN TOTAL STORE REVENUE COUNTER (Liquid Glassy) */}
       <View style={[styles.mainRevenueCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View>
@@ -199,7 +199,7 @@ export const OwnerEarningsPage = () => {
         </View>
       </View>
 
-      {/* CHAIR 1 & CHAIR 2 REFINED CARDS (Icon Only + Subtle Revenue) */}
+      {/* CHAIR 1 & CHAIR 2 LIQUID GLASSY CARDS */}
       <View style={styles.kpiRow}>
         {/* Chair 1 */}
         <View style={[styles.chairSketchCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -207,7 +207,7 @@ export const OwnerEarningsPage = () => {
             <View style={[styles.chairIconCircle, { backgroundColor: theme.subCard, borderColor: theme.border }]}>
               <ChatIcon name="chair" size={16} color={theme.text} />
             </View>
-            <Text style={{ fontSize: 10, fontWeight: '500', color: '#10B981', opacity: 0.8 }}>₹{chair1Total}</Text>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: '#10B981', opacity: 0.9 }}>₹{chair1Total}</Text>
           </View>
 
           <View style={styles.chairMiddleRow}>
@@ -222,7 +222,7 @@ export const OwnerEarningsPage = () => {
             <View style={[styles.chairIconCircle, { backgroundColor: theme.subCard, borderColor: theme.border }]}>
               <ChatIcon name="chair" size={16} color={theme.text} />
             </View>
-            <Text style={{ fontSize: 10, fontWeight: '500', color: '#10B981', opacity: 0.8 }}>₹{chair2Total}</Text>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: '#10B981', opacity: 0.9 }}>₹{chair2Total}</Text>
           </View>
 
           <View style={styles.chairMiddleRow}>
@@ -246,7 +246,7 @@ export const OwnerEarningsPage = () => {
                 <View style={[styles.serviceCountCircle, { backgroundColor: theme.card, borderColor: theme.border }]}>
                   <Text style={{ fontSize: 14, fontWeight: '900', color: theme.text }}>{stat.count}</Text>
                 </View>
-                <Text style={{ fontSize: 12, fontWeight: '500', color: '#10B981', opacity: 0.85 }}>₹{stat.revenue}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#10B981', opacity: 0.9 }}>₹{stat.revenue}</Text>
               </View>
               <Text style={[styles.serviceBoxTitle, { color: theme.text }]} numberOfLines={1}>{name}</Text>
             </View>
@@ -309,14 +309,14 @@ export const OwnerEarningsPage = () => {
 };
 
 const styles = StyleSheet.create({
-  scrollPad: { paddingHorizontal: 20, paddingBottom: 160, width: '100%', alignSelf: 'center' },
-  dateBadgeCard: { padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 14, width: '100%' },
+  scrollPad: { paddingHorizontal: 16, paddingBottom: 160, width: '100%', maxWidth: 720, alignSelf: 'center' },
+  dateBadgeCard: { padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 14, width: '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2 },
   dateBadgeText: { fontSize: 13, fontWeight: '800' },
   totalServicesPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, borderWidth: 1 },
-  filterContainer: { flexDirection: 'row', borderRadius: 24, padding: 6, marginBottom: 16, borderWidth: 1, width: '100%' },
+  filterContainer: { flexDirection: 'row', borderRadius: 24, padding: 6, marginBottom: 16, borderWidth: 1, width: '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2 },
   filterBtn: { flex: 1, paddingVertical: 10, borderRadius: 18, alignItems: 'center' },
   filterText: { fontSize: 11, fontWeight: '800' },
-  mainRevenueCard: { padding: 24, borderRadius: 30, borderWidth: 1, marginBottom: 16, width: '100%' },
+  mainRevenueCard: { padding: 24, borderRadius: 30, borderWidth: 1, marginBottom: 16, width: '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 14, elevation: 3 },
   mainRevenueVal: { fontSize: 32, fontWeight: '900', marginTop: 4 },
   kpiLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   analyticsBadge: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
@@ -324,19 +324,19 @@ const styles = StyleSheet.create({
   progressBarTrack: { height: 8, borderRadius: 4, overflow: 'hidden' },
   progressBarFill: { height: '100%', borderRadius: 4 },
   kpiRow: { flexDirection: 'row', gap: 14, marginBottom: 16, width: '100%' },
-  chairSketchCard: { flex: 1, padding: 18, borderRadius: 26, borderWidth: 1 },
+  chairSketchCard: { flex: 1, padding: 18, borderRadius: 26, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2 },
   chairIconCircle: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   chairMiddleRow: { alignItems: 'center', marginVertical: 8 },
   chairCountNumber: { fontSize: 26, fontWeight: '900', textAlign: 'center' },
   chairSubLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginTop: 2, textAlign: 'center' },
   sectionHeader: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginVertical: 12 },
-  ownerCard: { padding: 22, borderRadius: 28, marginBottom: 14, borderWidth: 1, width: '100%' },
+  ownerCard: { padding: 22, borderRadius: 28, marginBottom: 14, borderWidth: 1, width: '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2 },
   serviceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, width: '100%', justifyContent: 'space-between' },
   serviceBox: { width: '47%', padding: 18, borderRadius: 24, borderWidth: 1 },
   serviceCountCircle: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   serviceBoxTitle: { fontSize: 13, fontWeight: '900', marginTop: 12, textAlign: 'center' },
   actionButtonsRow: { flexDirection: 'row', gap: 14, marginVertical: 16, width: '100%' },
-  bigActionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 24 },
+  bigActionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3 },
   bigActionBtnText: { fontSize: 13, fontWeight: '900' },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
   ownerCustName: { fontSize: 17, fontWeight: '800', marginTop: 4 },

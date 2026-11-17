@@ -9,7 +9,9 @@ import {
   Image,
   Animated,
   Alert,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSalon } from '../../context/SalonContext';
 import { getTheme } from '../../constants/theme';
 import { ChatIcon } from '../../components/common/ChatIcon';
@@ -33,17 +35,15 @@ export const CustomerHomePage = ({
     estWaitMins,
   } = useSalon() as any;
   const theme = getTheme(isDarkMode);
+  const insets = useSafeAreaInsets();
 
   const dynamicBorderColor = isDarkMode ? '#3F3F46' : '#E4E4E7';
+  const dynamicTopPadding = Platform.OS === 'web' ? 12 : Math.max(insets.top, 8);
 
-  // 1-sec Flashing Recording Light Animation for Occupied Chairs
   const pulseAnim = useRef(new Animated.Value(1)).current;
-
-  // Smooth Entry Animation for Hero Text
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
 
-  // Rotating Brand Titles Array
   const brandTitles = [
     { main: 'MONU', letter: 'G', rest: 'ENTS', parlour: 'PARLOUR' },
     { main: 'SHARP', letter: 'F', rest: 'ADE', parlour: 'STUDIO' },
@@ -54,7 +54,6 @@ export const CustomerHomePage = ({
   const titleFadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Blinking loop for red dot
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 0.2, duration: 500, useNativeDriver: true }),
@@ -62,13 +61,11 @@ export const CustomerHomePage = ({
       ])
     ).start();
 
-    // Hero Text Entrance Effect
     Animated.parallel([
       Animated.timing(fadeAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: 0, duration: 700, useNativeDriver: true }),
     ]).start();
 
-    // 30-Second Brand Title Rotation Effect
     const interval = setInterval(() => {
       Animated.timing(titleFadeAnim, {
         toValue: 0,
@@ -101,8 +98,11 @@ export const CustomerHomePage = ({
   const currentTitle = brandTitles[titleIndex];
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
-      {/* Sketch Hero (Clean Flat Typography without 3D Shadow) */}
+    <ScrollView 
+      contentContainerStyle={[styles.scrollPad, { paddingTop: dynamicTopPadding }]} 
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Sketch Hero */}
       <View style={styles.sketchHeroContainer}>
         <View
           style={[
@@ -137,7 +137,6 @@ export const CustomerHomePage = ({
           <View style={[styles.portraitFadeBottom, { backgroundColor: theme.bg }]} />
         </View>
 
-        {/* Animated & Rotating Clean Flat Text Block */}
         <Animated.View
           style={[
             styles.sketchTextBlock,
@@ -150,7 +149,6 @@ export const CustomerHomePage = ({
           <TouchableOpacity activeOpacity={0.9} onPress={handleBrandSecretTap}>
             <Text style={[styles.sketchMonuText, { color: theme.text }]}>{currentTitle.main}</Text>
 
-            {/* Iconic G-Stack Row (Clean Flat Style) */}
             <View style={styles.sketchGentsRow}>
               <Text style={[styles.sketchGiantG, { color: theme.text }]}>{currentTitle.letter}</Text>
               <View style={styles.sketchEntsStack}>
@@ -159,7 +157,6 @@ export const CustomerHomePage = ({
               </View>
             </View>
 
-            {/* Parlour Tagline */}
             <View style={styles.elegantSubRow}>
               <View style={[styles.subLineLeft, { backgroundColor: theme.subText }]} />
               <Text style={[styles.sketchParlourText, { color: theme.subText }]}>
@@ -171,7 +168,7 @@ export const CustomerHomePage = ({
         </Animated.View>
       </View>
 
-      {/* 2-Chair Status Capsule with Soft Grey Borders */}
+      {/* 2-Chair Status Capsule */}
       <View
         style={[
           styles.chairsOuterCapsule,
@@ -235,7 +232,7 @@ export const CustomerHomePage = ({
         </View>
       </View>
 
-      {/* Waiting Counter + Book Now Row */}
+      {/* Waiting Counter + Book Now Row (Restored Original Layout) */}
       <View style={styles.waitingBookRow}>
         <View style={styles.waitingBox}>
           <Text style={[styles.waitingLabel, { color: theme.subText }]}>waiting</Text>
@@ -280,11 +277,11 @@ export const CustomerHomePage = ({
 };
 
 const styles = StyleSheet.create({
-  scrollPad: { paddingHorizontal: 22, paddingBottom: 160, paddingTop: 10 },
+  scrollPad: { paddingHorizontal: 22, paddingBottom: 160, width: '100%', maxWidth: 720, alignSelf: 'center' },
   sketchHeroContainer: {
     height: 295,
     position: 'relative',
-    marginTop: 2,
+    marginTop: 0,
     marginBottom: 28,
     marginHorizontal: -22,
     paddingHorizontal: 24,

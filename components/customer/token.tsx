@@ -26,7 +26,7 @@ export const CustomerTokenPage = () => {
   } = useSalon() as any;
 
   const theme = getTheme(isDarkMode);
-  const dynamicBorderColor = isDarkMode ? '#27272A' : '#E4E4E7';
+  const dynamicBorderColor = isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastAnim = useRef(new Animated.Value(0)).current;
@@ -378,7 +378,7 @@ export const CustomerTokenPage = () => {
 };
 
 const styles = StyleSheet.create({
-  scrollPad: { paddingHorizontal: 20, paddingBottom: 175, paddingTop: 14 },
+  scrollPad: { paddingHorizontal: 20, paddingBottom: 180, paddingTop: 14 },
   headerRow: { marginBottom: 16 },
   pageTitle: { fontSize: 22, fontWeight: '900', letterSpacing: 0.3 },
   pageSub: { fontSize: 12, fontWeight: '600', marginTop: 2 },

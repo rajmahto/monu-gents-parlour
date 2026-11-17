@@ -30,7 +30,7 @@ export const CustomerDetailsPage = ({ onOpenOwner }: { onOpenOwner: () => void }
 
   const theme = getTheme(isDarkMode);
   const insets = useSafeAreaInsets();
-  const dynamicBorderColor = isDarkMode ? '#27272A' : '#E4E4E7';
+  const dynamicBorderColor = isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
 
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [newPhotoUri, setNewPhotoUri] = useState<string | null>(null);
@@ -102,7 +102,6 @@ export const CustomerDetailsPage = ({ onOpenOwner }: { onOpenOwner: () => void }
 
   return (
     <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
-      {/* Header Top Row */}
       <View style={styles.headerTopRow}>
         <View style={{ flex: 1, paddingRight: 10 }}>
           <Text style={[styles.pageMainTitle, { color: theme.text }]}>Store & Directory</Text>
@@ -122,7 +121,6 @@ export const CustomerDetailsPage = ({ onOpenOwner }: { onOpenOwner: () => void }
         </TouchableOpacity>
       </View>
 
-      {/* Salon Directory Card */}
       <View style={[styles.cardBox, { backgroundColor: theme.card, borderColor: dynamicBorderColor }]}>
         <Text style={[styles.salonNameText, { color: theme.text }]}>
           {salonInfo.name || 'MONU GENTS PARLOUR'}
@@ -151,7 +149,6 @@ export const CustomerDetailsPage = ({ onOpenOwner }: { onOpenOwner: () => void }
           </View>
         </View>
 
-        {/* Action Grid */}
         <View style={styles.actionGrid}>
           <TouchableOpacity
             style={[
@@ -234,7 +231,6 @@ export const CustomerDetailsPage = ({ onOpenOwner }: { onOpenOwner: () => void }
         </View>
       </View>
 
-      {/* Parlour Gallery */}
       <View style={{ marginBottom: 24 }}>
         <View style={[styles.rowBetween, { marginBottom: 12 }]}>
           <Text style={[styles.sectionHeading, { color: theme.text }]}>
@@ -270,7 +266,6 @@ export const CustomerDetailsPage = ({ onOpenOwner }: { onOpenOwner: () => void }
         </ScrollView>
       </View>
 
-      {/* REFINED ELEGANT GOOGLE RATING SUMMARY CARD */}
       <View
         style={[
           styles.cardBox,
@@ -318,7 +313,6 @@ export const CustomerDetailsPage = ({ onOpenOwner }: { onOpenOwner: () => void }
         </TouchableOpacity>
       </View>
 
-      {/* RECENT CUSTOMER FEEDBACK LIST */}
       <View style={{ marginBottom: 14, marginTop: 4 }}>
         <Text style={[styles.sectionHeading, { color: theme.text, fontSize: 18 }]}>
           Client Feedback ({reviews.length})
@@ -328,7 +322,7 @@ export const CustomerDetailsPage = ({ onOpenOwner }: { onOpenOwner: () => void }
       {reviews.map((rev: any) => (
         <View
           key={rev.id}
-          style={[styles.cardBox, { backgroundColor: theme.card, borderColor: dynamicBorderColor, padding: 18, marginBottom: 12 }] }
+          style={[styles.cardBox, { backgroundColor: theme.card, borderColor: dynamicBorderColor, padding: 18, marginBottom: 12 }]}
         >
           <View style={styles.rowBetween}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -387,7 +381,6 @@ export const CustomerDetailsPage = ({ onOpenOwner }: { onOpenOwner: () => void }
         </View>
       ))}
 
-      {/* Upload Modal */}
       <Modal visible={uploadModalOpen} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
           <View

@@ -204,7 +204,7 @@ export const OwnerSettingsPage = ({
         </View>
       </View>
 
-      {/* 1. Instant Shop Status Toggle (Emoji-Free) */}
+      {/* 1. Instant Shop Status Toggle */}
       <View style={[styles.ownerCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <View style={styles.rowBetween}>
           <View style={{ flex: 1, paddingRight: 10 }}>
@@ -299,7 +299,7 @@ export const OwnerSettingsPage = ({
 
         {/* Add New Service Form */}
         <Text style={[styles.sectionHeader, { color: theme.muted, marginTop: 16 }]}>
-          {isHindi ? 'नई सर्विस जोड़ें' : 'ADD NEW SERVICE'}
+          {isHindi ? 'नई सर्विस जोड़ें' : 'ADD NEW SERVICE'}
         </Text>
         <TextInput
           style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
@@ -328,7 +328,7 @@ export const OwnerSettingsPage = ({
         </View>
         <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.green }]} onPress={handleAddService}>
           <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 14 }}>
-            {isHindi ? '+ रेट कार्ड में नई सर्विस जोड़ें' : '+ Add Service to Rate Card'}
+            {isHindi ? '+ रेट कार्ड में नई सर्विस जोड़ें' : '+ Add Service to Rate Card'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -346,7 +346,6 @@ export const OwnerSettingsPage = ({
             : 'Configure links opened when customers tap the icons on the Shop page:'}
         </Text>
 
-        {/* Google Maps Input */}
         <Text style={[styles.inputLabelText, { color: theme.subText }]}>
           {isHindi ? 'Google Maps और Review लिंक' : 'Google Maps & Review Link'}
         </Text>
@@ -359,7 +358,6 @@ export const OwnerSettingsPage = ({
           onChangeText={setMapLinkInput}
         />
 
-        {/* Instagram Input */}
         <Text style={[styles.inputLabelText, { color: theme.subText }]}>
           {isHindi ? 'Instagram प्रोफाइल लिंक' : 'Instagram Profile Link'}
         </Text>
@@ -372,7 +370,6 @@ export const OwnerSettingsPage = ({
           onChangeText={setInstaLinkInput}
         />
 
-        {/* YouTube Input */}
         <Text style={[styles.inputLabelText, { color: theme.subText }]}>
           {isHindi ? 'YouTube चैनल लिंक' : 'YouTube Channel Link'}
         </Text>
@@ -462,7 +459,7 @@ export const OwnerSettingsPage = ({
 };
 
 const styles = StyleSheet.create({
-  scrollPad: { paddingHorizontal: 20, paddingBottom: 180 },
+  scrollPad: { paddingHorizontal: 20, paddingBottom: 220 }, // Increased padding so content scrolls completely clear of dock
   sectionHeader: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginVertical: 12 },
   ownerCard: { padding: 20, borderRadius: 28, marginBottom: 16, borderWidth: 1 },
   ownerCustName: { fontSize: 16, fontWeight: '800' },

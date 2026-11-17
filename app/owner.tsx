@@ -34,9 +34,9 @@ export default function OwnerScreen() {
   const [passwordInput, setPasswordInput] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const dynamicBorderColor = isDarkMode ? '#27272A' : '#E4E4E7';
+  const dynamicBorderColor = isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
   const dynamicBottomOffset = Math.max(insets.bottom, 12) + 10;
-  const dynamicTopPadding = Platform.OS === 'web' ? 0 : Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight || 28 : 44);
+  const dynamicTopPadding = Platform.OS === 'web' ? 16 : Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight || 36 : 48);
 
   const handleUnlock = () => {
     if (passwordInput.trim() === String(ownerPassword || 'monu123').trim()) {
@@ -145,7 +145,6 @@ export default function OwnerScreen() {
     <View style={[styles.container, { backgroundColor: theme.bg, paddingTop: dynamicTopPadding }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
-      {/* Un-squeezed Full Width Wrapper */}
       <View style={styles.responsiveWrapper}>
         <View style={[styles.header, { borderBottomColor: dynamicBorderColor }]}>
           <View style={styles.headerLeft}>
@@ -172,6 +171,7 @@ export default function OwnerScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Content Area with exact bottom padding so content scrolls cleanly behind/above floating dock */}
         <View style={styles.contentArea}>
           {activeTab === 'floor' && <OwnerFloorPage />}
           {activeTab === 'queue' && <OwnerQueuePage />}
@@ -180,12 +180,12 @@ export default function OwnerScreen() {
         </View>
       </View>
 
-      {/* Auto-Adaptive Bottom 4-Tab Pill Dock */}
+      {/* iOS Style Liquid Glassy Floating Bottom Dock */}
       <View
         style={[
           styles.bottomDock,
           {
-            backgroundColor: theme.card,
+            backgroundColor: isDarkMode ? 'rgba(24, 24, 27, 0.82)' : 'rgba(255, 255, 255, 0.82)',
             borderColor: dynamicBorderColor,
             bottom: dynamicBottomOffset,
             width: '92%',
@@ -247,6 +247,8 @@ const styles = StyleSheet.create({
   responsiveWrapper: {
     flex: 1,
     width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
     height: '100%',
     position: 'relative',
   },
@@ -261,6 +263,11 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     borderWidth: 1,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
   },
   iconCircle: {
     width: 60,
@@ -343,22 +350,22 @@ const styles = StyleSheet.create({
   contentArea: {
     flex: 1,
     width: '100%',
-    paddingBottom: 90,
+    // Ensures scroll view inside subpages fills container boundaries fully
   },
   bottomDock: {
     position: 'absolute',
     alignSelf: 'center',
     borderRadius: 99,
-    padding: 5,
+    padding: 6,
     borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     zIndex: 100,
-    elevation: 10,
+    elevation: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
   },
   dockTab: {
     flex: 1,

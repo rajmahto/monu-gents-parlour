@@ -1,6 +1,7 @@
 // components/customer/CustomerView.tsx
 import React, { useState } from 'react';
 import { View, StyleSheet, Modal, Text, TouchableOpacity, TextInput, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSalon } from '../../context/SalonContext';
 import { getTheme } from '../../constants/theme';
 import { TabType, ServiceItem } from '../../types/database';
@@ -14,6 +15,7 @@ import { ChatIcon } from '../common/ChatIcon';
 export const CustomerView = ({ onOpenOwner }: { onOpenOwner: () => void }) => {
   const { isDarkMode, services, bookToken } = useSalon() as any;
   const theme = getTheme(isDarkMode);
+  const insets = useSafeAreaInsets();
   
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -21,7 +23,8 @@ export const CustomerView = ({ onOpenOwner }: { onOpenOwner: () => void }) => {
   const [custName, setCustName] = useState('');
   const [custPhone, setCustPhone] = useState('');
 
-  const dynamicBorderColor = isDarkMode ? '#3F3F46' : '#E4E4E7';
+  const dynamicBorderColor = isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
+  const dynamicBottomOffset = Math.max(insets.bottom, 12) + 10;
   const padVal = getResponsivePadding();
   const maxW = getMaxContentWidth();
   const isWide = isTabletOrDesktop();
@@ -38,11 +41,21 @@ export const CustomerView = ({ onOpenOwner }: { onOpenOwner: () => void }) => {
             />
           )}
           {activeTab === 'token' && <CustomerTokenPage />}
-          {activeTab === 'services' && <CustomerServicesPage />}
+          {activeTab === 'services' && <CustomerServicesPage onNavigate={setActiveTab} />}
           {activeTab === 'details' && <CustomerDetailsPage onOpenOwner={onOpenOwner} />}
         </View>
 
-        <View style={[styles.bottomNav, { backgroundColor: theme.card, borderColor: dynamicBorderColor, maxWidth: isWide ? 600 : '100%' }]}>
+        {/* iOS Style Liquid Glassy Floating Bottom Nav */}
+        <View style={[
+          styles.bottomNav, 
+          { 
+            backgroundColor: isDarkMode ? 'rgba(24, 24, 27, 0.82)' : 'rgba(255, 255, 255, 0.82)', 
+            borderColor: dynamicBorderColor, 
+            bottom: dynamicBottomOffset,
+            maxWidth: isWide ? 600 : '92%',
+            width: '92%',
+          }
+        ]}>
           {[
             { id: 'home', label: 'Home', icon: 'chair' },
             { id: 'token', label: 'My token', icon: 'users' },
@@ -53,6 +66,7 @@ export const CustomerView = ({ onOpenOwner }: { onOpenOwner: () => void }) => {
             return (
               <TouchableOpacity
                 key={t.id}
+                activeOpacity={0.85}
                 style={[styles.navTab, active && { backgroundColor: theme.primaryBtn }]}
                 onPress={() => setActiveTab(t.id as TabType)}
               >
@@ -135,7 +149,7 @@ const styles = StyleSheet.create({
     height: Platform.OS === 'web' ? ('100vh' as any) : '100%',
     width: '100%',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'web' ? 0 : 0,
+    paddingTop: 0,
   },
   responsiveWrapper: {
     flex: 1,
@@ -149,31 +163,28 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     position: 'absolute',
-    bottom: Platform.OS === 'web' ? 16 : 20,
-    left: 20,
-    right: 20,
     alignSelf: 'center',
     borderRadius: 99,
-    padding: 4,
+    padding: 6,
     borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     zIndex: 100,
+    elevation: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowRadius: 20,
   },
   navTab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 12,
-    paddingHorizontal: 2,
-    borderRadius: 99,
+    gap: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderRadius: 24,
   },
   navTabText: { fontSize: 11, fontWeight: '700' },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
