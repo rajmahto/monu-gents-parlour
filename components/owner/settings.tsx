@@ -54,25 +54,12 @@ export const OwnerSettingsPage = ({
 
   const pickHeroPhoto = async () => {
     const defaultLink = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
-    
-    Alert.alert(
-      isHindi ? 'फोटो अपडेट करें' : 'Update Hero Photo',
-      isHindi ? 'क्या आप डिफ़ॉल्ट स्टूडियो पोर्ट्रेट सेट करना चाहते हैं?' : 'Set default professional studio portrait?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Set Studio Photo',
-          onPress: async () => {
-            await updateSalonSettings({ ownerPortrait: defaultLink });
-            Alert.alert(
-              isHindi ? 'फोटो बदल गई' : 'Photo Updated',
-              isHindi ? 'होम स्क्रीन की फोटो सफलतापूर्व सेव हो गई है।' : 'Hero portrait saved successfully.'
-            );
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    try {
+      await updateSalonSettings({ ownerPortrait: defaultLink });
+      alert(isHindi ? 'होम स्क्रीन की फोटो सफलतापूर्व सेव हो गई है!' : 'Hero portrait saved successfully!');
+    } catch (err) {
+      console.log('Photo update error:', err);
+    }
   };
 
   const handleAddService = () => {
@@ -393,7 +380,7 @@ export const OwnerSettingsPage = ({
           {isHindi ? 'होम स्क्रीन की मुख्य फोटो (HERO PHOTO)' : 'HOME SCREEN HERO MODEL PHOTO'}
         </Text>
         <Image
-          source={{ uri: salonInfo.ownerPortrait }}
+          source={{ uri: salonInfo?.ownerPortrait || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85' }}
           style={{ width: '100%', height: 180, borderRadius: 20, marginBottom: 14 }}
           resizeMode="cover"
         />
@@ -457,7 +444,7 @@ export const OwnerSettingsPage = ({
 };
 
 const styles = StyleSheet.create({
-  scrollPad: { paddingHorizontal: 20, paddingBottom: 240 },
+  scrollPad: { paddingHorizontal: 20, paddingBottom: 320 }, // Increased padding so content scrolls completely clear of dock
   sectionHeader: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginVertical: 12 },
   ownerCard: { padding: 20, borderRadius: 28, marginBottom: 16, borderWidth: 1 },
   ownerCustName: { fontSize: 16, fontWeight: '800' },
