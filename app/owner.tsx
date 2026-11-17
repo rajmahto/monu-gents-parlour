@@ -36,7 +36,11 @@ export default function OwnerScreen() {
 
   const dynamicBorderColor = isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
   const dynamicBottomOffset = Math.max(insets.bottom, 12) + 10;
-  const dynamicTopPadding = Platform.OS === 'web' ? 16 : Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight || 36 : 48);
+  
+  // Clean top padding for web vs mobile
+  const dynamicTopPadding = Platform.OS === 'web' 
+    ? 10 
+    : Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight || 36 : 48);
 
   const handleUnlock = () => {
     if (passwordInput.trim() === String(ownerPassword || 'monu123').trim()) {
@@ -171,7 +175,6 @@ export default function OwnerScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Content Area with exact bottom padding so content scrolls cleanly behind/above floating dock */}
         <View style={styles.contentArea}>
           {activeTab === 'floor' && <OwnerFloorPage />}
           {activeTab === 'queue' && <OwnerQueuePage />}
@@ -180,7 +183,6 @@ export default function OwnerScreen() {
         </View>
       </View>
 
-      {/* iOS Style Liquid Glassy Floating Bottom Dock */}
       <View
         style={[
           styles.bottomDock,
@@ -189,7 +191,7 @@ export default function OwnerScreen() {
             borderColor: dynamicBorderColor,
             bottom: dynamicBottomOffset,
             width: '92%',
-            maxWidth: 640,
+            maxWidth: 680,
           },
         ]}
       >
@@ -247,7 +249,7 @@ const styles = StyleSheet.create({
   responsiveWrapper: {
     flex: 1,
     width: '100%',
-    maxWidth: 720,
+    maxWidth: 860, // Optimized wider layout for desktop
     alignSelf: 'center',
     height: '100%',
     position: 'relative',
@@ -350,7 +352,8 @@ const styles = StyleSheet.create({
   contentArea: {
     flex: 1,
     width: '100%',
-    // Ensures scroll view inside subpages fills container boundaries fully
+    position: 'relative',
+    overflow: 'hidden',
   },
   bottomDock: {
     position: 'absolute',

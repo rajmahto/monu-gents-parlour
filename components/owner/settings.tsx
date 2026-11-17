@@ -459,7 +459,7 @@ export const OwnerSettingsPage = ({
 };
 
 const styles = StyleSheet.create({
-  scrollPad: { paddingHorizontal: 20, paddingBottom: 220 }, // Increased padding so content scrolls completely clear of dock
+  scrollPad: { paddingHorizontal: 20, paddingBottom: 240 }, // Increased padding so content scrolls completely clear of dock
   sectionHeader: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginVertical: 12 },
   ownerCard: { padding: 20, borderRadius: 28, marginBottom: 16, borderWidth: 1 },
   ownerCustName: { fontSize: 16, fontWeight: '800' },

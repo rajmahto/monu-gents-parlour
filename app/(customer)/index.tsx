@@ -33,14 +33,13 @@ export default function CustomerIndexScreen() {
 
   const insets = useSafeAreaInsets();
   const dynamicBottomOffset = Math.max(insets.bottom, 12) + 10;
-  const dynamicTopPadding = Math.max(
-    insets.top,
-    Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 44
-  );
+  
+  const dynamicTopPadding = Platform.OS === 'web' 
+    ? 10 
+    : Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 44);
 
-  const dynamicBorderColor = isDarkMode ? '#3F3F46' : '#E4E4E7';
+  const dynamicBorderColor = isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
 
-  // Jab Shop Closed ho toh Modal kholne se pehle hi Notification dega!
   const handleOpenBookingModal = () => {
     if (!isOnline) {
       Alert.alert(
@@ -54,10 +53,10 @@ export default function CustomerIndexScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+    <View style={[styles.mainContainer, { backgroundColor: theme.bg }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
-      <View style={{ flex: 1, paddingTop: dynamicTopPadding }}>
+      <View style={[styles.responsiveWrapper, { paddingTop: dynamicTopPadding }]}>
         {/* Global Customer Top Bar with Live OPEN / CLOSED Pill */}
         <View style={[styles.globalTopBar, { borderBottomColor: dynamicBorderColor }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -93,7 +92,7 @@ export default function CustomerIndexScreen() {
           </View>
         </View>
 
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, width: '100%' }}>
           {activeTab === 'home' && (
             <CustomerHomePage
               onNavigate={setActiveTab}
@@ -114,9 +113,11 @@ export default function CustomerIndexScreen() {
         style={[
           styles.bottomNav,
           {
-            backgroundColor: theme.card,
+            backgroundColor: isDarkMode ? 'rgba(24, 24, 27, 0.82)' : 'rgba(255, 255, 255, 0.82)',
             borderColor: dynamicBorderColor,
             bottom: dynamicBottomOffset,
+            maxWidth: 680,
+            width: '92%',
           },
         ]}
       >
@@ -163,6 +164,9 @@ export default function CustomerIndexScreen() {
                 backgroundColor: theme.card,
                 borderColor: dynamicBorderColor,
                 borderWidth: 1,
+                maxWidth: 540,
+                alignSelf: 'center',
+                width: '100%',
                 paddingBottom: Math.max(insets.bottom, 16) + 16,
               },
             ]}
@@ -275,6 +279,20 @@ export default function CustomerIndexScreen() {
 }
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    height: Platform.OS === 'web' ? ('100vh' as any) : '100%',
+    width: '100%',
+    alignItems: 'center',
+  },
+  responsiveWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 860,
+    alignSelf: 'center',
+    height: '100%',
+    position: 'relative',
+  },
   globalTopBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -309,19 +327,18 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    alignSelf: 'center',
     borderRadius: 99,
-    padding: 5,
+    padding: 6,
     borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     zIndex: 100,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 12,
   },
   navTab: {
     flex: 1,
@@ -357,11 +374,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'flex-end',
+    padding: 16,
   },
   modalSheet: {
     padding: 26,
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
+    borderRadius: 36,
   },
   serviceOption: {
     flexDirection: 'row',

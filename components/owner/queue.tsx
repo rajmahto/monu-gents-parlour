@@ -145,7 +145,7 @@ export const OwnerQueuePage = () => {
 };
 
 const styles = StyleSheet.create({
-  scrollPad: { paddingHorizontal: 20, paddingBottom: 160 },
+  scrollPad: { paddingHorizontal: 20, paddingBottom: 240 },
   sectionHeader: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginVertical: 12 },
   ownerCard: { padding: 20, borderRadius: 28, marginBottom: 16, borderWidth: 1 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

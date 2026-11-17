@@ -252,7 +252,7 @@ export const OwnerFloorPage = () => {
 };
 
 const styles = StyleSheet.create({
-  scrollPad: { paddingHorizontal: 20, paddingBottom: 160 },
+  scrollPad: { paddingHorizontal: 20, paddingBottom: 240 },
   shopStatusBanner: {
     padding: 18,
     borderRadius: 24,
