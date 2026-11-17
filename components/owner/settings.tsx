@@ -48,13 +48,8 @@ export const OwnerSettingsPage = ({
     salonInfo?.youtubeUrl || 'https://youtube.com/@MonuParlourVlogs'
   );
 
-  // Direct URL Input State for Desktop testing
-  const defaultHeroPhoto = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
-  const currentPortrait = salonInfo?.ownerPortrait && !salonInfo.ownerPortrait.startsWith('blob:')
-    ? salonInfo.ownerPortrait
-    : defaultHeroPhoto;
-
-  const [heroUrlInput, setHeroUrlInput] = useState(currentPortrait);
+  // Direct URL Input State
+  const [heroUrlInput, setHeroUrlInput] = useState('');
 
   // Password Management States
   const [currentPassInput, setCurrentPassInput] = useState('');
@@ -87,11 +82,9 @@ export const OwnerSettingsPage = ({
 
   // Direct URL Save for Desktop
   const handleSaveHeroUrl = async () => {
-    if (!heroUrlInput.trim()) {
-      alert('Please enter a valid image URL');
-      return;
-    }
-    await updateSalonSettings({ ownerPortrait: heroUrlInput.trim() });
+    const finalLink = heroUrlInput.trim() || salonInfo?.ownerPortrait || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
+    await updateSalonSettings({ ownerPortrait: finalLink });
+    setHeroUrlInput('');
     alert(isHindi ? 'फोटो लिंक सेव हो गया!' : 'Hero photo URL saved successfully!');
   };
 
@@ -161,6 +154,10 @@ export const OwnerSettingsPage = ({
       isHindi ? 'आपका एडमिन पासवर्ड सुरक्षित रूप से बदल गया है।' : 'Admin password updated securely.'
     );
   };
+
+  const displayPortrait = salonInfo?.ownerPortrait && !salonInfo.ownerPortrait.startsWith('blob:')
+    ? salonInfo.ownerPortrait
+    : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
 
   return (
     <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
@@ -407,13 +404,13 @@ export const OwnerSettingsPage = ({
         </TouchableOpacity>
       </View>
 
-      {/* 4. Hero Model Photo Hybrid Section (Phone Gallery + Desktop URL Input) */}
+      {/* 4. Hero Model Photo Hybrid Section */}
       <View style={[styles.ownerCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <Text style={[styles.sectionHeader, { color: theme.muted, marginTop: 0 }]}>
           {isHindi ? 'होम स्क्रीन की मुख्य फोटो (HERO PHOTO)' : 'HOME SCREEN HERO MODEL PHOTO'}
         </Text>
         <Image
-          source={{ uri: currentPortrait }}
+          source={{ uri: displayPortrait }}
           style={{ width: '100%', height: 180, borderRadius: 20, marginBottom: 14 }}
           resizeMode="cover"
         />
@@ -431,7 +428,7 @@ export const OwnerSettingsPage = ({
         </Text>
         <TextInput
           style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
-          placeholder="https://images.unsplash.com/..."
+          placeholder={salonInfo?.ownerPortrait || "https://images.unsplash.com/..."}
           placeholderTextColor={theme.muted}
           autoCapitalize="none"
           value={heroUrlInput}
