@@ -1,6 +1,7 @@
 // components/owner/settings.tsx
 import React, { useState } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, TextInput, StyleSheet, Image, Alert } from 'react-native';
+import { ScrollView, View, Text, TouchableOpacity, TextInput, StyleSheet, Image, Alert, Platform } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useSalon } from '../../context/SalonContext';
 import { getTheme } from '../../constants/theme';
 import { ChatIcon } from '../../components/common/ChatIcon';
@@ -47,26 +48,35 @@ export const OwnerSettingsPage = ({
     salonInfo?.youtubeUrl || 'https://youtube.com/@MonuParlourVlogs'
   );
 
-  // Hero Photo Direct URL State (Ignores any accidental blob values)
-  const defaultHeroPhoto = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
-  const currentPortrait = salonInfo?.ownerPortrait && !salonInfo.ownerPortrait.startsWith('blob:') 
-    ? salonInfo.ownerPortrait 
-    : defaultHeroPhoto;
-
-  const [heroUrlInput, setHeroUrlInput] = useState(currentPortrait);
-
   // Password Management States
   const [currentPassInput, setCurrentPassInput] = useState('');
   const [newPassInput, setNewPassInput] = useState('');
   const [confirmPassInput, setConfirmPassInput] = useState('');
 
-  const handleSaveHeroPhotoUrl = async () => {
-    if (!heroUrlInput.trim() || heroUrlInput.startsWith('blob:')) {
-      alert('Please enter a valid public image URL (local blobs are blocked)');
+  // Phone Gallery Picker function
+  const pickHeroPhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      alert(isHindi ? 'फोटो चुनने के लिए गैलरी की अनुमति दें।' : 'Gallery access required.');
       return;
     }
-    await updateSalonSettings({ ownerPortrait: heroUrlInput.trim() });
-    alert(isHindi ? 'फोटो सफलतापूर्व सेव हो गई!' : 'Hero portrait saved successfully!');
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.85,
+    });
+    
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      const selectedUri = result.assets[0].uri;
+      
+      if (Platform.OS === 'web' && selectedUri.startsWith('blob:')) {
+        alert('Web browsers generate temporary blobs. Please test on a real phone or use a direct URL!');
+        return;
+      }
+
+      await updateSalonSettings({ ownerPortrait: selectedUri });
+      alert(isHindi ? 'गैलरी से फोटो सफलतापूर्व सेव हो गई!' : 'Photo from gallery updated successfully!');
+    }
   };
 
   const handleAddService = () => {
@@ -135,6 +145,10 @@ export const OwnerSettingsPage = ({
       isHindi ? 'आपका एडमिन पासवर्ड सुरक्षित रूप से बदल गया है।' : 'Admin password updated securely.'
     );
   };
+
+  const displayPortrait = salonInfo?.ownerPortrait && !salonInfo.ownerPortrait.startsWith('blob:')
+    ? salonInfo.ownerPortrait
+    : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
 
   return (
     <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
@@ -381,32 +395,19 @@ export const OwnerSettingsPage = ({
         </TouchableOpacity>
       </View>
 
-      {/* 4. Hero Model Photo Direct URL Input */}
+      {/* 4. Hero Model Photo Phone Gallery Picker */}
       <View style={[styles.ownerCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <Text style={[styles.sectionHeader, { color: theme.muted, marginTop: 0 }]}>
           {isHindi ? 'होम स्क्रीन की मुख्य फोटो (HERO PHOTO)' : 'HOME SCREEN HERO MODEL PHOTO'}
         </Text>
         <Image
-          source={{ uri: currentPortrait }}
+          source={{ uri: displayPortrait }}
           style={{ width: '100%', height: 180, borderRadius: 20, marginBottom: 14 }}
           resizeMode="cover"
         />
-
-        <Text style={[styles.inputLabelText, { color: theme.subText }]}>
-          {isHindi ? 'फोटो का सीधा इमेज लिंक (URL) डालें' : 'Enter Direct Image URL'}
-        </Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
-          placeholder="https://images.unsplash.com/..."
-          placeholderTextColor={theme.muted}
-          autoCapitalize="none"
-          value={heroUrlInput}
-          onChangeText={setHeroUrlInput}
-        />
-
-        <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn }]} onPress={handleSaveHeroPhotoUrl}>
+        <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn }]} onPress={pickHeroPhoto}>
           <Text style={[styles.whiteBtnText, { color: theme.primaryBtnText }]}>
-            {isHindi ? 'फोटो लिंक सेव करें' : 'Save Hero Photo URL'}
+            {isHindi ? 'गैलरी से फोटो अपलोड करें' : 'Upload Photo from Phone Gallery'}
           </Text>
         </TouchableOpacity>
       </View>
