@@ -14,7 +14,6 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSalon } from '../context/SalonContext';
 import { getTheme } from '../constants/theme';
-import { getResponsivePadding, getMaxContentWidth, isTabletOrDesktop } from '../utils/responsive';
 import { ChatIcon } from '../components/common/ChatIcon';
 
 import { OwnerFloorPage } from '../components/owner/floor';
@@ -36,10 +35,6 @@ export default function OwnerScreen() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const dynamicBorderColor = isDarkMode ? '#27272A' : '#E4E4E7';
-  const padVal = getResponsivePadding();
-  const maxW = getMaxContentWidth();
-  const isWide = isTabletOrDesktop();
-
   const dynamicBottomOffset = Math.max(insets.bottom, 12) + 10;
   const dynamicTopPadding = Platform.OS === 'web' ? 0 : Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight || 28 : 44);
 
@@ -65,11 +60,11 @@ export default function OwnerScreen() {
       >
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
-        <View style={[styles.lockContainer, { paddingHorizontal: padVal }]}>
+        <View style={styles.lockContainer}>
           <View
             style={[
               styles.lockCard,
-              { backgroundColor: theme.card, borderColor: dynamicBorderColor, maxWidth: isWide ? 480 : '100%', width: '100%', alignSelf: 'center' },
+              { backgroundColor: theme.card, borderColor: dynamicBorderColor, width: '90%', maxWidth: 440, alignSelf: 'center' },
             ]}
           >
             <View
@@ -150,7 +145,8 @@ export default function OwnerScreen() {
     <View style={[styles.container, { backgroundColor: theme.bg, paddingTop: dynamicTopPadding }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
-      <View style={[styles.responsiveWrapper, { paddingHorizontal: padVal, maxWidth: maxW, alignSelf: 'center', width: '100%' }]}>
+      {/* Un-squeezed Full Width Wrapper */}
+      <View style={styles.responsiveWrapper}>
         <View style={[styles.header, { borderBottomColor: dynamicBorderColor }]}>
           <View style={styles.headerLeft}>
             <ChatIcon name="shield" size={20} color={theme.text} />
@@ -184,6 +180,7 @@ export default function OwnerScreen() {
         </View>
       </View>
 
+      {/* Auto-Adaptive Bottom 4-Tab Pill Dock */}
       <View
         style={[
           styles.bottomDock,
@@ -191,7 +188,8 @@ export default function OwnerScreen() {
             backgroundColor: theme.card,
             borderColor: dynamicBorderColor,
             bottom: dynamicBottomOffset,
-            maxWidth: isWide ? 600 : '100%',
+            width: '92%',
+            maxWidth: 640,
           },
         ]}
       >
@@ -316,9 +314,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
     paddingBottom: 14,
     borderBottomWidth: 1,
     marginBottom: 14,
+    width: '100%',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -342,12 +342,11 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     flex: 1,
+    width: '100%',
     paddingBottom: 90,
   },
   bottomDock: {
     position: 'absolute',
-    left: 16,
-    right: 16,
     alignSelf: 'center',
     borderRadius: 99,
     padding: 5,

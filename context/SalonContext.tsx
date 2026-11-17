@@ -52,7 +52,7 @@ interface SalonContextProps {
   cancelMyToken: (bookingId?: string) => void;
   addWalkIn: (name: string, phone: string) => void;
   seatCustomer: (bookingId: string, chairId: 1 | 2) => void;
-  completeService: (booking: Booking, method: 'CASH' | 'UPI') => void;
+  completeService: (booking: Booking, method: 'CASH' | 'UPI', chairId?: 1 | 2) => void;
   markNoShow: (bookingId: string) => void;
   submitReview: (rating: number, comment: string, photoUri?: string, bookingId?: string) => void;
   updateServicePrice: (id: string, delta: number) => void;
@@ -130,6 +130,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       entryType: 'BOOKING',
       time: '09:45 AM',
       date: new Date().toISOString().split('T')[0],
+      chairId: 1,
     },
   ]);
 
@@ -149,7 +150,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=800&q=80',
   ]);
 
-  // Supports MULTIPLE tokens booked from the same phone!
   const [myTokenIds, setMyTokenIds] = useState<string[]>(['b2']);
 
   const setMyTokenId = (id: string) => {
@@ -232,7 +232,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const chair2Booking = bookings.find((b) => b.status === 'in_service' && b.chairId === 2) || null;
   const waitingQueue = bookings.filter((b) => b.status === 'waiting');
 
-  // All active bookings for this phone (waiting, in_service, or unreviewed completed)
   const myActiveBookings = bookings.filter(
     (b) =>
       myTokenIds.includes(b.id) &&
@@ -290,7 +289,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setBookings((prev) => [...prev, newBkg]);
-    // Adds new token to the list without overwriting previous tokens on this phone!
     setMyTokenIds((prev) => [newBkg.id, ...prev]);
     return true;
   };
@@ -360,7 +358,8 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   };
 
-  const completeService = (booking: Booking, method: 'CASH' | 'UPI') => {
+  const completeService = (booking: Booking, method: 'CASH' | 'UPI', chairId?: 1 | 2) => {
+    const assignedChair = chairId || booking.chairId || 1;
     setBookings((prev) =>
       prev.map((b) =>
         b.id === booking.id ? { ...b, status: 'completed', chairId: undefined } : b
@@ -375,12 +374,13 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...prev,
       {
         id: 'e_' + Date.now(),
-        desc: `${booking.serviceName} (${booking.token} - ${booking.name})`,
+        desc: `${booking.serviceName} (${booking.token} • ${booking.name})`,
         amount: booking.price,
         method,
         entryType: 'BOOKING',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         date: todayStr,
+        chairId: assignedChair,
       },
     ]);
   };
@@ -447,6 +447,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         entryType: 'MANUAL',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         date: todayStr,
+        chairId: 1,
       },
     ]);
   };

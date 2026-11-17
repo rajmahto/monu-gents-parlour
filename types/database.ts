@@ -44,5 +44,6 @@ export interface EarningRecord {
   method: 'CASH' | 'UPI';
   entryType: 'BOOKING' | 'MANUAL';
   time: string;
-  date: string; // <-- Automatic date tracking (e.g., '2026-11-14')
+  date?: string;
+  chairId?: 1 | 2; 
 }
