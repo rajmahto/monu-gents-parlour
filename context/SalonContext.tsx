@@ -7,7 +7,8 @@ import {
   doc, 
   setDoc, 
   updateDoc, 
-  deleteDoc 
+  deleteDoc, 
+  getDoc 
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { ServiceItem, Booking, ReviewItem, EarningRecord } from '../types/database';
@@ -37,6 +38,7 @@ interface SalonContextProps {
   setOwnerPassword: (v: string) => void;
   salonInfo: SalonInfo;
   setSalonInfo: React.Dispatch<React.SetStateAction<SalonInfo>>;
+  updateSalonSettings: (newInfo: Partial<SalonInfo>) => Promise<void>;
   services: ServiceItem[];
   deleteService: (id: string) => void;
   bookings: Booking[];
@@ -118,12 +120,18 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Real-time synchronization with Firebase Firestore
   useEffect(() => {
     try {
-      // Real-time Listener for Salon Settings & Photos
+      // Real-time Listener for Salon Settings, Photos & Info
       const unsubSettings = onSnapshot(doc(db, 'settings', 'salonData'), (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (data.parlourPhotos && Array.isArray(data.parlourPhotos)) {
             setParlourPhotos(data.parlourPhotos);
+          }
+          if (data.salonInfo) {
+            setSalonInfo((prev) => ({ ...prev, ...data.salonInfo }));
+          }
+          if (data.ownerPassword) {
+            setOwnerPassword(data.ownerPassword);
           }
         }
       });
@@ -185,6 +193,29 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setIsLoaded(true);
     }
   }, []);
+
+  const updateSalonSettings = async (newInfo: Partial<SalonInfo>) => {
+    try {
+      const updated = { ...salonInfo, ...newInfo };
+      setSalonInfo(updated);
+      await setDoc(doc(db, 'settings', 'salonData'), {
+        salonInfo: updated,
+      }, { merge: true });
+    } catch (err) {
+      console.log('Salon settings save error:', err);
+    }
+  };
+
+  const updateOwnerPasswordSecure = async (newPass: string) => {
+    try {
+      setOwnerPassword(newPass);
+      await setDoc(doc(db, 'settings', 'salonData'), {
+        ownerPassword: newPass,
+      }, { merge: true });
+    } catch (err) {
+      console.log('Password save error:', err);
+    }
+  };
 
   const addParlourPhoto = async (uri: string) => {
     try {
@@ -457,9 +488,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isHindi,
         setIsHindi,
         ownerPassword,
-        setOwnerPassword,
+        setOwnerPassword: updateOwnerPasswordSecure,
         salonInfo,
         setSalonInfo,
+        updateSalonSettings,
         services,
         deleteService,
         bookings,

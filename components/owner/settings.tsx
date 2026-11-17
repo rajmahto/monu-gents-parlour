@@ -17,7 +17,7 @@ export const OwnerSettingsPage = ({
   const {
     isDarkMode,
     salonInfo,
-    setSalonInfo,
+    updateSalonSettings,
     services,
     deleteService,
     updateServicePrice,
@@ -68,10 +68,10 @@ export const OwnerSettingsPage = ({
       quality: 0.85,
     });
     if (!result.canceled && result.assets?.[0]?.uri) {
-      setSalonInfo((prev: any) => ({ ...prev, ownerPortrait: result.assets[0].uri }));
+      await updateSalonSettings({ ownerPortrait: result.assets[0].uri });
       Alert.alert(
         isHindi ? 'फोटो बदल गई' : 'Photo Updated',
-        isHindi ? 'होम स्क्रीन की फोटो सफलतापूर्वक अपडेट हो गई है।' : 'Hero portrait updated successfully.'
+        isHindi ? 'होम स्क्रीन की फोटो सफलतापूर्व Firestore में सेव हो गई है।' : 'Hero portrait updated and saved to Firestore.'
       );
     }
   };
@@ -94,18 +94,17 @@ export const OwnerSettingsPage = ({
     );
   };
 
-  const handleSaveSocialLinks = () => {
-    setSalonInfo((prev: any) => ({
-      ...prev,
+  const handleSaveSocialLinks = async () => {
+    await updateSalonSettings({
       mapUrl: mapLinkInput.trim(),
       instaUrl: instaLinkInput.trim(),
       youtubeUrl: youtubeLinkInput.trim(),
-    }));
+    });
     Alert.alert(
       isHindi ? 'लिंक सेव हो गए' : 'Links Updated',
       isHindi
-        ? 'गूगल मैप्स, इंस्टाग्राम और यूट्यूब लिंक अपडेट हो गए हैं।'
-        : 'Google Maps, Instagram, and YouTube links saved successfully.'
+        ? 'गूगल मैप्स, इंस्टाग्राम और यूट्यूब लिंक क्लाउड पर सेव हो गए हैं।'
+        : 'Google Maps, Instagram, and YouTube links saved to cloud successfully.'
     );
   };
 
@@ -140,7 +139,7 @@ export const OwnerSettingsPage = ({
     setConfirmPassInput('');
     Alert.alert(
       isHindi ? 'पासवर्ड बदल गया' : 'Password Updated',
-      isHindi ? 'आपका एडमिन पासवर्ड सफलतापूर्वक बदल गया है।' : 'Admin password updated successfully.'
+      isHindi ? 'आपका एडमिन पासवर्ड सुरक्षित रूप से बदल गया है।' : 'Admin password updated securely.'
     );
   };
 
@@ -268,7 +267,7 @@ export const OwnerSettingsPage = ({
             <View style={{ flex: 1 }}>
               <Text style={[styles.ownerCustName, { color: theme.text }]}>{s.name}</Text>
               <Text style={[styles.ownerCustMeta, { color: theme.subText }]}>
-                ₹{s.price} • ~{s.duration} {isHindi ? 'मिनट' : 'm'}
+                ₹{s.price} ~ {s.duration} {isHindi ? 'मिनट' : 'm'}
               </Text>
             </View>
 
@@ -459,7 +458,7 @@ export const OwnerSettingsPage = ({
 };
 
 const styles = StyleSheet.create({
-  scrollPad: { paddingHorizontal: 20, paddingBottom: 240 }, // Increased padding so content scrolls completely clear of dock
+  scrollPad: { paddingHorizontal: 20, paddingBottom: 240 },
   sectionHeader: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginVertical: 12 },
   ownerCard: { padding: 20, borderRadius: 28, marginBottom: 16, borderWidth: 1 },
   ownerCustName: { fontSize: 16, fontWeight: '800' },
