@@ -6,10 +6,8 @@ import {
   onSnapshot, 
   doc, 
   setDoc, 
-  addDoc, 
   updateDoc, 
-  deleteDoc, 
-  getDoc 
+  deleteDoc 
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { ServiceItem, Booking, ReviewItem, EarningRecord } from '../types/database';
@@ -120,15 +118,15 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Real-time synchronization with Firebase Firestore
   useEffect(() => {
     try {
-      // Fetch Saved Photos & Settings from Firestore
-      getDoc(doc(db, 'settings', 'salonData')).then((docSnap) => {
+      // Real-time Listener for Salon Settings & Photos
+      const unsubSettings = onSnapshot(doc(db, 'settings', 'salonData'), (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (data.parlourPhotos && Array.isArray(data.parlourPhotos)) {
             setParlourPhotos(data.parlourPhotos);
           }
         }
-      }).catch((err) => console.log('Fetch settings error:', err));
+      });
 
       // Listen to Bookings in Real-Time
       const unsubBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
@@ -176,6 +174,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
 
       return () => {
+        unsubSettings();
         unsubBookings();
         unsubServices();
         unsubEarnings();
@@ -187,13 +186,16 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, []);
 
-  const addParlourPhoto = (uri: string) => {
-    const updatedPhotos = [uri, ...parlourPhotos];
-    setParlourPhotos(updatedPhotos);
-    // Save permanently in Firestore
-    setDoc(doc(db, 'settings', 'salonData'), {
-      parlourPhotos: updatedPhotos,
-    }, { merge: true }).catch((err) => console.log('Photo save error:', err));
+  const addParlourPhoto = async (uri: string) => {
+    try {
+      const updatedPhotos = [uri, ...parlourPhotos];
+      setParlourPhotos(updatedPhotos);
+      await setDoc(doc(db, 'settings', 'salonData'), {
+        parlourPhotos: updatedPhotos,
+      }, { merge: true });
+    } catch (err) {
+      console.log('Photo save error:', err);
+    }
   };
 
   const chair1Booking = bookings.find((b) => b.status === 'in_service' && b.chairId === 1) || null;
