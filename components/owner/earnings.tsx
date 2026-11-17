@@ -9,7 +9,6 @@ export const OwnerEarningsPage = () => {
   const { isDarkMode, isHindi, earnings } = useSalon();
   const theme = getTheme(isDarkMode);
 
-  // Filter State: Day, Week, Month, Year
   const [filterPeriod, setFilterPeriod] = useState<'day' | 'week' | 'month' | 'year'>('day');
 
   const today = new Date();
@@ -26,7 +25,6 @@ export const OwnerEarningsPage = () => {
   });
   const currentYearStr = today.getFullYear().toString();
 
-  // Automatic Filtering Logic based on real dates
   const filteredEarnings = earnings.filter((e) => {
     const entryDateStr = e.date || todayStr;
     const entryDate = new Date(entryDateStr);
@@ -55,6 +53,17 @@ export const OwnerEarningsPage = () => {
   const periodUpi = filteredEarnings
     .filter((e) => e.method === 'UPI')
     .reduce((acc, curr) => acc + curr.amount, 0);
+
+  // Service Breakdown calculation for filtered period
+  const serviceStats: Record<string, { count: number; revenue: number }> = {};
+  filteredEarnings.forEach((e) => {
+    const serviceName = e.desc || 'Haircut & Styling';
+    if (!serviceStats[serviceName]) {
+      serviceStats[serviceName] = { count: 0, revenue: 0 };
+    }
+    serviceStats[serviceName].count += 1;
+    serviceStats[serviceName].revenue += e.amount;
+  });
 
   const periodLabels: Record<'day' | 'week' | 'month' | 'year', string> = {
     day: isHindi ? 'आज' : 'DAY',
@@ -154,6 +163,36 @@ export const OwnerEarningsPage = () => {
         </View>
       </View>
 
+      {/* SERVICE BREAKDOWN CARD (Haircut, Shave, etc. Count & Revenue) */}
+      <View style={[styles.ownerCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <Text style={[styles.sectionHeader, { color: theme.text, marginTop: 0 }]}>
+          {isHindi ? '서비스 / कटिंग ब्रेकडाउन (Service Breakdown)' : 'SERVICE BREAKDOWN SUMMARY'}
+        </Text>
+        <Text style={{ fontSize: 11, color: theme.subText, fontWeight: '700', marginBottom: 12 }}>
+          {isHindi ? 'किस सर्विस से कितनी कमाई हुई' : 'Count & revenue generated per service type'}
+        </Text>
+
+        {Object.keys(serviceStats).length === 0 ? (
+          <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600', textAlign: 'center', paddingVertical: 10 }}>
+            {isHindi ? 'इस अवधि में कोई सेवा पूरी नहीं हुई।' : 'No services completed during this period.'}
+          </Text>
+        ) : (
+          Object.entries(serviceStats).map(([name, stat], idx) => (
+            <View key={idx} style={[styles.breakdownRow, { borderBottomColor: theme.border }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: '900', color: theme.text }}>{name}</Text>
+                <Text style={{ fontSize: 11, color: theme.subText, fontWeight: '700', marginTop: 2 }}>
+                  {stat.count} {stat.count === 1 ? 'service done' : 'services done'}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 15, fontWeight: '900', color: theme.green }}>
+                ₹{stat.revenue}
+              </Text>
+            </View>
+          ))
+        )}
+      </View>
+
       {/* Ledger History */}
       <Text style={[styles.sectionHeader, { color: theme.muted }]}>
         {isHindi
@@ -228,6 +267,13 @@ const styles = StyleSheet.create({
   kpiVal: { fontSize: 20, fontWeight: '900', marginTop: 4 },
   sectionHeader: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginVertical: 12 },
   ownerCard: { padding: 20, borderRadius: 28, marginBottom: 14, borderWidth: 1 },
+  breakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+  },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   ownerCustName: { fontSize: 17, fontWeight: '800', marginTop: 4 },
   ownerCustMeta: { fontSize: 13, marginTop: 3 },

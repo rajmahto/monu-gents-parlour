@@ -1,10 +1,10 @@
 // components/customer/CustomerView.tsx
 import React, { useState } from 'react';
-import { View, StyleSheet, Modal, Text, TouchableOpacity, TextInput } from 'react-native';
-import { router } from 'expo-router';
+import { View, StyleSheet, Modal, Text, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { useSalon } from '../../context/SalonContext';
 import { getTheme } from '../../constants/theme';
 import { TabType, ServiceItem } from '../../types/database';
+import { getResponsivePadding, getMaxContentWidth, isTablet } from '../../utils/responsive';
 import { CustomerHomePage } from './home';
 import { CustomerTokenPage } from './token';
 import { CustomerServicesPage } from './services';
@@ -14,6 +14,7 @@ import { ChatIcon } from '../common/ChatIcon';
 export const CustomerView = ({ onOpenOwner }: { onOpenOwner: () => void }) => {
   const { isDarkMode, services, bookToken } = useSalon() as any;
   const theme = getTheme(isDarkMode);
+  
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceItem>(services[0]);
@@ -21,51 +22,55 @@ export const CustomerView = ({ onOpenOwner }: { onOpenOwner: () => void }) => {
   const [custPhone, setCustPhone] = useState('');
 
   const dynamicBorderColor = isDarkMode ? '#3F3F46' : '#E4E4E7';
+  const padVal = getResponsivePadding();
+  const maxW = getMaxContentWidth();
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.bg }}>
-      {/* Active Tab Content Render (Clean & Modular) */}
-      <View style={{ flex: 1, marginTop: 10 }}>
-        {activeTab === 'home' && (
-          <CustomerHomePage
-            onNavigate={setActiveTab}
-            onOpenBooking={() => setBookingModalOpen(true)}
-            onOpenOwner={onOpenOwner}
-          />
-        )}
-        {activeTab === 'token' && <CustomerTokenPage />}
-        {activeTab === 'services' && <CustomerServicesPage />}
-        {activeTab === 'details' && <CustomerDetailsPage onOpenOwner={onOpenOwner} />}
-      </View>
+    <View style={[styles.mainContainer, { backgroundColor: theme.bg }]}>
+      {/* Responsive Centered Wrapper for Mobile & Tablet */}
+      <View style={[styles.responsiveWrapper, { paddingHorizontal: padVal, maxWidth: maxW }]}>
+        <View style={styles.contentArea}>
+          {activeTab === 'home' && (
+            <CustomerHomePage
+              onNavigate={setActiveTab}
+              onOpenBooking={() => setBookingModalOpen(true)}
+              onOpenOwner={onOpenOwner}
+            />
+          )}
+          {activeTab === 'token' && <CustomerTokenPage />}
+          {activeTab === 'services' && <CustomerServicesPage />}
+          {activeTab === 'details' && <CustomerDetailsPage onOpenOwner={onOpenOwner} />}
+        </View>
 
-      {/* Bottom 4-Tab Pill Bar (Dock) */}
-      <View style={[styles.bottomNav, { backgroundColor: theme.card, borderColor: dynamicBorderColor }]}>
-        {[
-          { id: 'home', label: 'Home', icon: 'chair' },
-          { id: 'token', label: 'My token', icon: 'users' },
-          { id: 'services', label: 'Service', icon: 'scissors' },
-          { id: 'details', label: 'Shop', icon: 'store' },
-        ].map((t) => {
-          const active = activeTab === t.id;
-          return (
-            <TouchableOpacity
-              key={t.id}
-              style={[styles.navTab, active && { backgroundColor: theme.primaryBtn }]}
-              onPress={() => setActiveTab(t.id as TabType)}
-            >
-              <ChatIcon name={t.icon} size={16} color={active ? theme.primaryBtnText : theme.subText} />
-              <Text style={[styles.navTabText, { color: active ? theme.primaryBtnText : theme.subText }, active && { fontWeight: '900' }]}>
-                {t.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        {/* Floating Bottom Navigation Dock */}
+        <View style={[styles.bottomNav, { backgroundColor: theme.card, borderColor: dynamicBorderColor, maxWidth: isTablet ? 600 : '100%' }]}>
+          {[
+            { id: 'home', label: 'Home', icon: 'chair' },
+            { id: 'token', label: 'My token', icon: 'users' },
+            { id: 'services', label: 'Service', icon: 'scissors' },
+            { id: 'details', label: 'Shop', icon: 'store' },
+          ].map((t) => {
+            const active = activeTab === t.id;
+            return (
+              <TouchableOpacity
+                key={t.id}
+                style={[styles.navTab, active && { backgroundColor: theme.primaryBtn }]}
+                onPress={() => setActiveTab(t.id as TabType)}
+              >
+                <ChatIcon name={t.icon} size={16} color={active ? theme.primaryBtnText : theme.subText} />
+                <Text style={[styles.navTabText, { color: active ? theme.primaryBtnText : theme.subText }, active && { fontWeight: '900' }]}>
+                  {t.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       {/* Global Booking Modal */}
       <Modal visible={bookingModalOpen} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.card, borderColor: dynamicBorderColor, borderWidth: 1 }]}>
+          <View style={[styles.modalSheet, { backgroundColor: theme.card, borderColor: dynamicBorderColor, borderWidth: 1, maxWidth: isTablet ? 540 : '100%', alignSelf: 'center', width: '100%' }]}>
             <View style={styles.rowBetween}>
               <Text style={{ fontSize: 22, fontWeight: '900', color: theme.text }}>Get Queue Token</Text>
               <TouchableOpacity onPress={() => setBookingModalOpen(false)}>
@@ -127,11 +132,28 @@ export const CustomerView = ({ onOpenOwner }: { onOpenOwner: () => void }) => {
 };
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    height: Platform.OS === 'web' ? ('100vh' as any) : '100%',
+    width: '100%',
+    alignItems: 'center',
+  },
+  responsiveWrapper: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  contentArea: {
+    flex: 1,
+    width: '100%',
+  },
   bottomNav: {
     position: 'absolute',
-    bottom: 20,
+    bottom: Platform.OS === 'web' ? 16 : 20,
     left: 20,
     right: 20,
+    alignSelf: 'center',
     borderRadius: 99,
     padding: 4,
     borderWidth: 1,
@@ -150,7 +172,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 2,
     borderRadius: 99,
   },
@@ -158,7 +180,7 @@ const styles = StyleSheet.create({
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   input: { paddingHorizontal: 16, paddingVertical: 14, borderRadius: 18, fontSize: 14, marginBottom: 14, borderWidth: 1 },
   bookBtn: { paddingVertical: 18, borderRadius: 99, alignItems: 'center', marginTop: 4 },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end' },
-  modalSheet: { padding: 26, borderTopLeftRadius: 36, borderTopRightRadius: 36 },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end', padding: 16 },
+  modalSheet: { padding: 26, borderTopLeftRadius: 36, borderTopRightRadius: 36, borderRadius: isTablet ? 36 : 0 },
   serviceOption: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, borderRadius: 20 },
 });
