@@ -47,19 +47,21 @@ export const OwnerSettingsPage = ({
     salonInfo?.youtubeUrl || 'https://youtube.com/@MonuParlourVlogs'
   );
 
+  // Hero Photo URL State
+  const [heroUrlInput, setHeroUrlInput] = useState(salonInfo?.ownerPortrait || '');
+
   // Password Management States
   const [currentPassInput, setCurrentPassInput] = useState('');
   const [newPassInput, setNewPassInput] = useState('');
   const [confirmPassInput, setConfirmPassInput] = useState('');
 
-  const pickHeroPhoto = async () => {
-    const defaultLink = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
-    try {
-      await updateSalonSettings({ ownerPortrait: defaultLink });
-      alert(isHindi ? 'होम स्क्रीन की फोटो सफलतापूर्व सेव हो गई है!' : 'Hero portrait saved successfully!');
-    } catch (err) {
-      console.log('Photo update error:', err);
+  const handleSaveHeroPhoto = async () => {
+    if (!heroUrlInput.trim()) {
+      alert('Please enter a valid image URL');
+      return;
     }
+    await updateSalonSettings({ ownerPortrait: heroUrlInput.trim() });
+    alert(isHindi ? 'फोटो सफलतापूर्व सेव हो गई!' : 'Hero portrait saved successfully!');
   };
 
   const handleAddService = () => {
@@ -384,9 +386,22 @@ export const OwnerSettingsPage = ({
           style={{ width: '100%', height: 180, borderRadius: 20, marginBottom: 14 }}
           resizeMode="cover"
         />
-        <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn }]} onPress={pickHeroPhoto}>
+
+        <Text style={[styles.inputLabelText, { color: theme.subText }]}>
+          {isHindi ? 'फोटो का इमेज लिंक (URL) डालें' : 'Enter Image Direct URL'}
+        </Text>
+        <TextInput
+          style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
+          placeholder="https://images.unsplash.com/..."
+          placeholderTextColor={theme.muted}
+          autoCapitalize="none"
+          value={heroUrlInput}
+          onChangeText={setHeroUrlInput}
+        />
+
+        <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn }]} onPress={handleSaveHeroPhoto}>
           <Text style={[styles.whiteBtnText, { color: theme.primaryBtnText }]}>
-            {isHindi ? 'डिफ़ॉल्ट स्टूडियो फोटो सेट करें' : 'Set Professional Studio Photo'}
+            {isHindi ? 'फोटो लिंक सेव करें' : 'Save Hero Photo URL'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -444,7 +459,7 @@ export const OwnerSettingsPage = ({
 };
 
 const styles = StyleSheet.create({
-  scrollPad: { paddingHorizontal: 20, paddingBottom: 320 }, // Increased padding so content scrolls completely clear of dock
+  scrollPad: { paddingHorizontal: 20, paddingBottom: 320 },
   sectionHeader: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginVertical: 12 },
   ownerCard: { padding: 20, borderRadius: 28, marginBottom: 16, borderWidth: 1 },
   ownerCustName: { fontSize: 16, fontWeight: '800' },
