@@ -4,7 +4,7 @@ import { View, StyleSheet, Modal, Text, TouchableOpacity, TextInput, Platform } 
 import { useSalon } from '../../context/SalonContext';
 import { getTheme } from '../../constants/theme';
 import { TabType, ServiceItem } from '../../types/database';
-import { getResponsivePadding, getMaxContentWidth, isTablet } from '../../utils/responsive';
+import { getResponsivePadding, getMaxContentWidth, isTabletOrDesktop } from '../../utils/responsive';
 import { CustomerHomePage } from './home';
 import { CustomerTokenPage } from './token';
 import { CustomerServicesPage } from './services';
@@ -24,10 +24,10 @@ export const CustomerView = ({ onOpenOwner }: { onOpenOwner: () => void }) => {
   const dynamicBorderColor = isDarkMode ? '#3F3F46' : '#E4E4E7';
   const padVal = getResponsivePadding();
   const maxW = getMaxContentWidth();
+  const isWide = isTabletOrDesktop();
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: theme.bg }]}>
-      {/* Responsive Centered Wrapper for Mobile & Tablet */}
       <View style={[styles.responsiveWrapper, { paddingHorizontal: padVal, maxWidth: maxW }]}>
         <View style={styles.contentArea}>
           {activeTab === 'home' && (
@@ -42,8 +42,7 @@ export const CustomerView = ({ onOpenOwner }: { onOpenOwner: () => void }) => {
           {activeTab === 'details' && <CustomerDetailsPage onOpenOwner={onOpenOwner} />}
         </View>
 
-        {/* Floating Bottom Navigation Dock */}
-        <View style={[styles.bottomNav, { backgroundColor: theme.card, borderColor: dynamicBorderColor, maxWidth: isTablet ? 600 : '100%' }]}>
+        <View style={[styles.bottomNav, { backgroundColor: theme.card, borderColor: dynamicBorderColor, maxWidth: isWide ? 600 : '100%' }]}>
           {[
             { id: 'home', label: 'Home', icon: 'chair' },
             { id: 'token', label: 'My token', icon: 'users' },
@@ -67,10 +66,9 @@ export const CustomerView = ({ onOpenOwner }: { onOpenOwner: () => void }) => {
         </View>
       </View>
 
-      {/* Global Booking Modal */}
       <Modal visible={bookingModalOpen} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.card, borderColor: dynamicBorderColor, borderWidth: 1, maxWidth: isTablet ? 540 : '100%', alignSelf: 'center', width: '100%' }]}>
+          <View style={[styles.modalSheet, { backgroundColor: theme.card, borderColor: dynamicBorderColor, borderWidth: 1, maxWidth: isWide ? 540 : '100%', alignSelf: 'center', width: '100%' }]}>
             <View style={styles.rowBetween}>
               <Text style={{ fontSize: 22, fontWeight: '900', color: theme.text }}>Get Queue Token</Text>
               <TouchableOpacity onPress={() => setBookingModalOpen(false)}>
@@ -137,6 +135,7 @@ const styles = StyleSheet.create({
     height: Platform.OS === 'web' ? ('100vh' as any) : '100%',
     width: '100%',
     alignItems: 'center',
+    paddingTop: Platform.OS === 'web' ? 0 : 0,
   },
   responsiveWrapper: {
     flex: 1,
@@ -181,6 +180,6 @@ const styles = StyleSheet.create({
   input: { paddingHorizontal: 16, paddingVertical: 14, borderRadius: 18, fontSize: 14, marginBottom: 14, borderWidth: 1 },
   bookBtn: { paddingVertical: 18, borderRadius: 99, alignItems: 'center', marginTop: 4 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end', padding: 16 },
-  modalSheet: { padding: 26, borderTopLeftRadius: 36, borderTopRightRadius: 36, borderRadius: isTablet ? 36 : 0 },
+  modalSheet: { padding: 26, borderTopLeftRadius: 36, borderTopRightRadius: 36, borderRadius: 36 },
   serviceOption: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, borderRadius: 20 },
 });

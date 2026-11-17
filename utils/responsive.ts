@@ -1,20 +1,23 @@
 // utils/responsive.ts
-import { Dimensions } from 'react-native';
+import { Dimensions, Platform } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
+export const getWindowDimensions = () => Dimensions.get('window');
 
-export const isTablet = width >= 768;
+export const isTabletOrDesktop = () => {
+  const { width } = getWindowDimensions();
+  return width >= 768;
+};
 
 export const getResponsivePadding = () => {
-  if (isTablet) {
-    return 36; // Tablet ke liye thodi zyada classy padding
-  }
-  return 16;   // Mobile ke liye compact padding
+  const { width } = getWindowDimensions();
+  if (width >= 1024) return 32; // Desktop/Laptop wide padding
+  if (width >= 768) return 24;  // Tablet
+  return 14;                    // Mobile
 };
 
 export const getMaxContentWidth = () => {
-  if (isTablet) {
-    return 720; // Tablet par content limit rahega taಕಿ poori screen par stretch na ho
-  }
+  const { width } = getWindowDimensions();
+  if (width >= 1024) return 900;  // Professional desktop container limit
+  if (width >= 768) return 700;   // Tablet width limit
   return '100%';
 };
