@@ -1,7 +1,6 @@
 // components/owner/settings.tsx
 import React, { useState } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, TextInput, StyleSheet, Image, Alert } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { useSalon } from '../../context/SalonContext';
 import { getTheme } from '../../constants/theme';
 import { ChatIcon } from '../../components/common/ChatIcon';
@@ -54,26 +53,26 @@ export const OwnerSettingsPage = ({
   const [confirmPassInput, setConfirmPassInput] = useState('');
 
   const pickHeroPhoto = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(
-        isHindi ? 'अनुमति आवश्यक है' : 'Permission Needed',
-        isHindi ? 'फोटो चुनने के लिए गैलरी की अनुमति दें।' : 'Gallery access required.'
-      );
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      quality: 0.85,
-    });
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      await updateSalonSettings({ ownerPortrait: result.assets[0].uri });
-      Alert.alert(
-        isHindi ? 'फोटो बदल गई' : 'Photo Updated',
-        isHindi ? 'होम स्क्रीन की फोटो सफलतापूर्व Firestore में सेव हो गई है।' : 'Hero portrait updated and saved to Firestore.'
-      );
-    }
+    const defaultLink = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
+    
+    Alert.alert(
+      isHindi ? 'फोटो अपडेट करें' : 'Update Hero Photo',
+      isHindi ? 'क्या आप डिफ़ॉल्ट स्टूडियो पोर्ट्रेट सेट करना चाहते हैं?' : 'Set default professional studio portrait?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Set Studio Photo',
+          onPress: async () => {
+            await updateSalonSettings({ ownerPortrait: defaultLink });
+            Alert.alert(
+              isHindi ? 'फोटो बदल गई' : 'Photo Updated',
+              isHindi ? 'होम स्क्रीन की फोटो सफलतापूर्व सेव हो गई है।' : 'Hero portrait saved successfully.'
+            );
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const handleAddService = () => {
@@ -400,7 +399,7 @@ export const OwnerSettingsPage = ({
         />
         <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn }]} onPress={pickHeroPhoto}>
           <Text style={[styles.whiteBtnText, { color: theme.primaryBtnText }]}>
-            {isHindi ? 'गैलरी से नई फोटो अपलोड करें' : 'Upload New Photo from Gallery'}
+            {isHindi ? 'डिफ़ॉल्ट स्टूडियो फोटो सेट करें' : 'Set Professional Studio Photo'}
           </Text>
         </TouchableOpacity>
       </View>
