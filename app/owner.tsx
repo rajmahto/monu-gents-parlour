@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSalon } from '../context/SalonContext';
 import { getTheme } from '../constants/theme';
+import { getResponsivePadding, getMaxContentWidth, isTablet } from '../utils/responsive';
 import { ChatIcon } from '../components/common/ChatIcon';
 
 import { OwnerFloorPage } from '../components/owner/floor';
@@ -27,7 +28,6 @@ export default function OwnerScreen() {
   const { isDarkMode, isHindi, ownerPassword } = useSalon();
   const theme = getTheme(isDarkMode);
   
-  // Phone ke top camera notch aur bottom button/gesture bar ki exact height nikalega
   const insets = useSafeAreaInsets();
 
   const [activeTab, setActiveTab] = useState<OwnerTab>('floor');
@@ -36,10 +36,11 @@ export default function OwnerScreen() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const dynamicBorderColor = isDarkMode ? '#27272A' : '#E4E4E7';
+  const padVal = getResponsivePadding();
+  const maxW = getMaxContentWidth();
 
-  // Agar 3-button navigation on hai toh insets.bottom ~48 hoga, warna gesture mein ~16
   const dynamicBottomOffset = Math.max(insets.bottom, 12) + 10;
-  const dynamicTopPadding = Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight || 28 : 44) + 8;
+  const dynamicTopPadding = Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight || 28 : 44) + 4;
 
   const handleUnlock = () => {
     if (passwordInput.trim() === String(ownerPassword || 'monu123').trim()) {
@@ -63,11 +64,11 @@ export default function OwnerScreen() {
       >
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
-        <View style={styles.lockContainer}>
+        <View style={[styles.lockContainer, { paddingHorizontal: padVal }]}>
           <View
             style={[
               styles.lockCard,
-              { backgroundColor: theme.card, borderColor: dynamicBorderColor },
+              { backgroundColor: theme.card, borderColor: dynamicBorderColor, maxWidth: isTablet ? 480 : '100%', width: '100%', alignSelf: 'center' },
             ]}
           >
             <View
@@ -148,38 +149,41 @@ export default function OwnerScreen() {
     <View style={[styles.container, { backgroundColor: theme.bg, paddingTop: dynamicTopPadding }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
-      {/* Clean Top Header */}
-      <View style={[styles.header, { borderBottomColor: dynamicBorderColor }]}>
-        <View style={styles.headerLeft}>
-          <ChatIcon name="shield" size={20} color={theme.text} />
-          <Text style={[styles.headerTitle, { color: theme.text }]}>
-            {isHindi ? 'एडमिन पैनल' : 'Admin Console'}
-          </Text>
+      {/* Responsive Centered Wrapper */}
+      <View style={[styles.responsiveWrapper, { paddingHorizontal: padVal, maxWidth: maxW, alignSelf: 'center', width: '100%' }]}>
+        {/* Clean Top Header */}
+        <View style={[styles.header, { borderBottomColor: dynamicBorderColor }]}>
+          <View style={styles.headerLeft}>
+            <ChatIcon name="shield" size={20} color={theme.text} />
+            <Text style={[styles.headerTitle, { color: theme.text }]}>
+              {isHindi ? 'एडमिन पैनल' : 'Admin Console'}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[
+              styles.lockBtn,
+              { backgroundColor: theme.card, borderColor: dynamicBorderColor },
+            ]}
+            onPress={() => {
+              setIsAuthenticated(false);
+              router.replace('/(customer)');
+            }}
+          >
+            <Text style={[styles.lockBtnText, { color: theme.text }]}>
+              {isHindi ? '← ग्राहक व्यू (लॉक)' : '← Customer View'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={[
-            styles.lockBtn,
-            { backgroundColor: theme.card, borderColor: dynamicBorderColor },
-          ]}
-          onPress={() => {
-            setIsAuthenticated(false);
-            router.replace('/(customer)');
-          }}
-        >
-          <Text style={[styles.lockBtnText, { color: theme.text }]}>
-            {isHindi ? '← ग्राहक व्यू (लॉक)' : '← Customer View'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Main Feature Content Area */}
-      <View style={styles.contentArea}>
-        {activeTab === 'floor' && <OwnerFloorPage />}
-        {activeTab === 'queue' && <OwnerQueuePage />}
-        {activeTab === 'earnings' && <OwnerEarningsPage />}
-        {activeTab === 'settings' && <OwnerSettingsPage />}
+        {/* Main Feature Content Area */}
+        <View style={styles.contentArea}>
+          {activeTab === 'floor' && <OwnerFloorPage />}
+          {activeTab === 'queue' && <OwnerQueuePage />}
+          {activeTab === 'earnings' && <OwnerEarningsPage />}
+          {activeTab === 'settings' && <OwnerSettingsPage />}
+        </View>
       </View>
 
       {/* Auto-Adaptive Bottom 4-Tab Pill Dock */}
@@ -189,7 +193,8 @@ export default function OwnerScreen() {
           {
             backgroundColor: theme.card,
             borderColor: dynamicBorderColor,
-            bottom: dynamicBottomOffset, // Auto-adjusts for 3-button or Gesture bar!
+            bottom: dynamicBottomOffset,
+            maxWidth: isTablet ? 600 : '100%',
           },
         ]}
       >
@@ -241,11 +246,20 @@ export default function OwnerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    height: Platform.OS === 'web' ? ('100vh' as any) : '100%',
+    width: '100%',
+  },
+  responsiveWrapper: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    position: 'relative',
   },
   lockContainer: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    alignItems: 'center',
+    width: '100%',
   },
   lockCard: {
     padding: 26,
@@ -305,10 +319,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    marginBottom: 18,
+    marginBottom: 14,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -332,11 +345,13 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     flex: 1,
+    paddingBottom: 90,
   },
   bottomDock: {
     position: 'absolute',
     left: 16,
     right: 16,
+    alignSelf: 'center',
     borderRadius: 99,
     padding: 5,
     borderWidth: 1,
