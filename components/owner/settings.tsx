@@ -1,6 +1,7 @@
 // components/owner/settings.tsx
 import React, { useState } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, TextInput, StyleSheet, Image, Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useSalon } from '../../context/SalonContext';
 import { getTheme } from '../../constants/theme';
 import { ChatIcon } from '../../components/common/ChatIcon';
@@ -47,21 +48,26 @@ export const OwnerSettingsPage = ({
     salonInfo?.youtubeUrl || 'https://youtube.com/@MonuParlourVlogs'
   );
 
-  // Hero Photo URL State
-  const [heroUrlInput, setHeroUrlInput] = useState(salonInfo?.ownerPortrait || '');
-
   // Password Management States
   const [currentPassInput, setCurrentPassInput] = useState('');
   const [newPassInput, setNewPassInput] = useState('');
   const [confirmPassInput, setConfirmPassInput] = useState('');
 
-  const handleSaveHeroPhoto = async () => {
-    if (!heroUrlInput.trim()) {
-      alert('Please enter a valid image URL');
+  const pickHeroPhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      alert(isHindi ? 'फोटो चुनने के लिए गैलरी की अनुमति दें।' : 'Gallery access required.');
       return;
     }
-    await updateSalonSettings({ ownerPortrait: heroUrlInput.trim() });
-    alert(isHindi ? 'फोटो सफलतापूर्व सेव हो गई!' : 'Hero portrait saved successfully!');
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.85,
+    });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      await updateSalonSettings({ ownerPortrait: result.assets[0].uri });
+      alert(isHindi ? 'फोटो सफलतापूर्व सेव हो गई!' : 'Hero portrait updated successfully!');
+    }
   };
 
   const handleAddService = () => {
@@ -386,22 +392,9 @@ export const OwnerSettingsPage = ({
           style={{ width: '100%', height: 180, borderRadius: 20, marginBottom: 14 }}
           resizeMode="cover"
         />
-
-        <Text style={[styles.inputLabelText, { color: theme.subText }]}>
-          {isHindi ? 'फोटो का इमेज लिंक (URL) डालें' : 'Enter Image Direct URL'}
-        </Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
-          placeholder="https://images.unsplash.com/..."
-          placeholderTextColor={theme.muted}
-          autoCapitalize="none"
-          value={heroUrlInput}
-          onChangeText={setHeroUrlInput}
-        />
-
-        <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn }]} onPress={handleSaveHeroPhoto}>
+        <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn }]} onPress={pickHeroPhoto}>
           <Text style={[styles.whiteBtnText, { color: theme.primaryBtnText }]}>
-            {isHindi ? 'फोटो लिंक सेव करें' : 'Save Hero Photo URL'}
+            {isHindi ? 'गैलरी से नई फोटो अपलोड करें' : 'Upload New Photo from Gallery'}
           </Text>
         </TouchableOpacity>
       </View>
