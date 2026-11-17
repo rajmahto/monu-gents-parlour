@@ -9,8 +9,7 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
-  query, 
-  orderBy 
+  getDoc 
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { ServiceItem, Booking, ReviewItem, EarningRecord } from '../types/database';
@@ -121,6 +120,16 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Real-time synchronization with Firebase Firestore
   useEffect(() => {
     try {
+      // Fetch Saved Photos & Settings from Firestore
+      getDoc(doc(db, 'settings', 'salonData')).then((docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.parlourPhotos && Array.isArray(data.parlourPhotos)) {
+            setParlourPhotos(data.parlourPhotos);
+          }
+        }
+      }).catch((err) => console.log('Fetch settings error:', err));
+
       // Listen to Bookings in Real-Time
       const unsubBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
         const fetchedBookings: Booking[] = snapshot.docs.map((docSnap) => ({
@@ -179,7 +188,12 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const addParlourPhoto = (uri: string) => {
-    setParlourPhotos((prev) => [uri, ...prev]);
+    const updatedPhotos = [uri, ...parlourPhotos];
+    setParlourPhotos(updatedPhotos);
+    // Save permanently in Firestore
+    setDoc(doc(db, 'settings', 'salonData'), {
+      parlourPhotos: updatedPhotos,
+    }, { merge: true }).catch((err) => console.log('Photo save error:', err));
   };
 
   const chair1Booking = bookings.find((b) => b.status === 'in_service' && b.chairId === 1) || null;
@@ -243,9 +257,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       type: 'online',
     };
 
-    // Save to Firebase Firestore
     setDoc(doc(db, 'bookings', customId), newBkg).catch((err) => console.log('Booking error:', err));
-
     setMyTokenIds((prev) => [newBkg.id, ...prev]);
     return true;
   };
