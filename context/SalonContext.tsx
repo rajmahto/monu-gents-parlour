@@ -1,7 +1,18 @@
 // context/SalonContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { 
+  collection, 
+  onSnapshot, 
+  doc, 
+  setDoc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  orderBy 
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 import { ServiceItem, Booking, ReviewItem, EarningRecord } from '../types/database';
 
 interface SalonInfo {
@@ -60,8 +71,6 @@ interface SalonContextProps {
   addManualEarning: (desc: string, amount: number, method: 'CASH' | 'UPI') => void;
 }
 
-const STORAGE_KEY = '@monu_salon_v3_storage';
-
 const SalonContext = createContext<SalonContextProps | undefined>(undefined);
 
 export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -93,136 +102,81 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     { id: 's4', name: 'Face Clean-up / Scrub', price: 100, duration: 15, desc: 'Instant glow face wash & scrub' },
   ]);
 
-  const [bookings, setBookings] = useState<Booking[]>([
-    {
-      id: 'b1',
-      token: '#Q-01',
-      name: 'Ramesh Kumar',
-      phone: '9876543210',
-      serviceName: 'Haircut',
-      price: 40,
-      duration: 15,
-      status: 'in_service',
-      chairId: 1,
-      time: '10:15 AM',
-      type: 'walk_in',
-    },
-    {
-      id: 'b2',
-      token: '#Q-02',
-      name: 'Amit Verma',
-      phone: '9123456789',
-      serviceName: 'Beard Trim / Shave',
-      price: 30,
-      duration: 10,
-      status: 'waiting',
-      time: '10:25 AM',
-      type: 'online',
-    },
-  ]);
-
-  const [earnings, setEarnings] = useState<EarningRecord[]>([
-    {
-      id: 'e1',
-      desc: 'Haircut (#Q-00)',
-      amount: 40,
-      method: 'CASH',
-      entryType: 'BOOKING',
-      time: '09:45 AM',
-      date: new Date().toISOString().split('T')[0],
-      chairId: 1,
-    },
-  ]);
-
-  const [reviews, setReviews] = useState<ReviewItem[]>([
-    {
-      id: 'r1',
-      name: 'Sandeep K.',
-      rating: 5,
-      comment: 'Best fade in Azadnagar, zero waiting with token!',
-      date: 'Yesterday',
-    },
-  ]);
-
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [earnings, setEarnings] = useState<EarningRecord[]>([]);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [parlourPhotos, setParlourPhotos] = useState<string[]>([
     'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&q=80',
     'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80',
     'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=800&q=80',
   ]);
 
-  const [myTokenIds, setMyTokenIds] = useState<string[]>(['b2']);
+  const [myTokenIds, setMyTokenIds] = useState<string[]>([]);
 
   const setMyTokenId = (id: string) => {
     if (!id) return;
     setMyTokenIds((prev) => (prev.includes(id) ? prev : [id, ...prev]));
   };
 
+  // Real-time synchronization with Firebase Firestore
   useEffect(() => {
-    const loadState = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed.isDarkMode !== undefined) setIsDarkMode(parsed.isDarkMode);
-          if (parsed.isOnline !== undefined) setIsOnline(parsed.isOnline);
-          if (parsed.isHindi !== undefined) setIsHindi(parsed.isHindi);
-          if (parsed.ownerPassword) setOwnerPassword(parsed.ownerPassword);
-          if (parsed.salonInfo) setSalonInfo(parsed.salonInfo);
-          if (parsed.services) setServices(parsed.services);
-          if (parsed.bookings) setBookings(parsed.bookings);
-          if (parsed.earnings) setEarnings(parsed.earnings);
-          if (parsed.reviews) setReviews(parsed.reviews);
-          if (parsed.parlourPhotos) setParlourPhotos(parsed.parlourPhotos);
-          if (Array.isArray(parsed.myTokenIds)) setMyTokenIds(parsed.myTokenIds);
+    try {
+      // Listen to Bookings in Real-Time
+      const unsubBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
+        const fetchedBookings: Booking[] = snapshot.docs.map((docSnap) => ({
+          ...(docSnap.data() as Booking),
+          id: docSnap.id,
+        }));
+        if (fetchedBookings.length > 0) {
+          setBookings(fetchedBookings);
         }
-      } catch (err) {
-        console.log('Storage load error:', err);
-      } finally {
         setIsLoaded(true);
-      }
-    };
-    loadState();
-  }, []);
+      });
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    const saveState = async () => {
-      try {
-        await AsyncStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({
-            isDarkMode,
-            isOnline,
-            isHindi,
-            ownerPassword,
-            salonInfo,
-            services,
-            bookings,
-            earnings,
-            reviews,
-            parlourPhotos,
-            myTokenIds,
-          })
-        );
-      } catch (err) {
-        console.log('Storage save error:', err);
-      }
-    };
-    saveState();
-  }, [
-    isLoaded,
-    isDarkMode,
-    isOnline,
-    isHindi,
-    ownerPassword,
-    salonInfo,
-    services,
-    bookings,
-    earnings,
-    reviews,
-    parlourPhotos,
-    myTokenIds,
-  ]);
+      // Listen to Services in Real-Time
+      const unsubServices = onSnapshot(collection(db, 'services'), (snapshot) => {
+        const fetchedServices: ServiceItem[] = snapshot.docs.map((docSnap) => ({
+          ...(docSnap.data() as ServiceItem),
+          id: docSnap.id,
+        }));
+        if (fetchedServices.length > 0) {
+          setServices(fetchedServices);
+        }
+      });
+
+      // Listen to Earnings in Real-Time
+      const unsubEarnings = onSnapshot(collection(db, 'earnings'), (snapshot) => {
+        const fetchedEarnings: EarningRecord[] = snapshot.docs.map((docSnap) => ({
+          ...(docSnap.data() as EarningRecord),
+          id: docSnap.id,
+        }));
+        if (fetchedEarnings.length > 0) {
+          setEarnings(fetchedEarnings);
+        }
+      });
+
+      // Listen to Reviews in Real-Time
+      const unsubReviews = onSnapshot(collection(db, 'reviews'), (snapshot) => {
+        const fetchedReviews: ReviewItem[] = snapshot.docs.map((docSnap) => ({
+          ...(docSnap.data() as ReviewItem),
+          id: docSnap.id,
+        }));
+        if (fetchedReviews.length > 0) {
+          setReviews(fetchedReviews);
+        }
+      });
+
+      return () => {
+        unsubBookings();
+        unsubServices();
+        unsubEarnings();
+        unsubReviews();
+      };
+    } catch (err) {
+      console.log('Firebase sync error:', err);
+      setIsLoaded(true);
+    }
+  }, []);
 
   const addParlourPhoto = (uri: string) => {
     setParlourPhotos((prev) => [uri, ...prev]);
@@ -275,8 +229,9 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const nextNum = bookings.length + 1;
     const tokenStr = `#Q-${String(nextNum).padStart(2, '0')}`;
+    const customId = `b-${Date.now()}`;
     const newBkg: Booking = {
-      id: `b-${Date.now()}`,
+      id: customId,
       token: tokenStr,
       name: name.trim(),
       phone: phone.trim(),
@@ -288,7 +243,9 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       type: 'online',
     };
 
-    setBookings((prev) => [...prev, newBkg]);
+    // Save to Firebase Firestore
+    setDoc(doc(db, 'bookings', customId), newBkg).catch((err) => console.log('Booking error:', err));
+
     setMyTokenIds((prev) => [newBkg.id, ...prev]);
     return true;
   };
@@ -296,23 +253,27 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const cancelMyToken = (bookingId?: string) => {
     const targetId = bookingId || myTokenId;
     if (!targetId) return;
-    setBookings((prev) =>
-      prev.map((b) => (b.id === targetId ? { ...b, status: 'no_show', chairId: undefined } : b))
-    );
+
+    updateDoc(doc(db, 'bookings', targetId), {
+      status: 'no_show',
+      chairId: null,
+    }).catch((err) => console.log('Cancel error:', err));
+
     setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
   };
 
   const deleteService = (id: string) => {
-    setServices((prev) => prev.filter((s) => s.id !== id));
+    deleteDoc(doc(db, 'services', id)).catch((err) => console.log('Delete service error:', err));
   };
 
   const addWalkIn = (name: string, phone: string) => {
     if (name.trim().length < 2) return;
     const nextNum = bookings.length + 1;
     const tokenStr = `#Q-${String(nextNum).padStart(2, '0')}`;
-    const srv = services[0];
+    const srv = services[0] || { name: 'Haircut', price: 40, duration: 15 };
+    const customId = `b-${Date.now()}`;
     const newBkg: Booking = {
-      id: `b-${Date.now()}`,
+      id: customId,
       token: tokenStr,
       name: name.trim(),
       phone: phone.trim() || '8252870053',
@@ -323,8 +284,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       type: 'walk_in',
     };
-    setBookings((prev) => [...prev, newBkg]);
+
+    setDoc(doc(db, 'bookings', customId), newBkg).catch((err) => console.log('Walk-in error:', err));
     setMyTokenIds((prev) => [newBkg.id, ...prev]);
+
     Alert.alert(
       isHindi ? 'टोकन बन गया' : 'Walk-In Token Created',
       isHindi
@@ -346,10 +309,14 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       );
       return;
     }
-    setBookings((prev) =>
-      prev.map((b) => (b.id === bookingId ? { ...b, status: 'in_service', chairId } : b))
-    );
+
+    updateDoc(doc(db, 'bookings', bookingId), {
+      status: 'in_service',
+      chairId,
+    }).catch((err) => console.log('Seat error:', err));
+
     setMyTokenIds((prev) => (prev.includes(bookingId) ? prev : [bookingId, ...prev]));
+
     Alert.alert(
       isHindi ? `कुर्सी ${chairId} अलॉट हो गई` : `Seated on Chair ${chairId}`,
       isHindi
@@ -360,35 +327,37 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const completeService = (booking: Booking, method: 'CASH' | 'UPI', chairId?: 1 | 2) => {
     const assignedChair = chairId || booking.chairId || 1;
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === booking.id ? { ...b, status: 'completed', chairId: undefined } : b
-      )
-    );
+
+    updateDoc(doc(db, 'bookings', booking.id), {
+      status: 'completed',
+      chairId: null,
+    }).catch((err) => console.log('Complete booking error:', err));
 
     setMyTokenIds((prev) => (prev.includes(booking.id) ? prev : [booking.id, ...prev]));
 
     const todayStr = new Date().toISOString().split('T')[0];
+    const earningId = 'e_' + Date.now();
+    const newEarning: EarningRecord = {
+      id: earningId,
+      desc: `${booking.serviceName} (${booking.token} - ${booking.name})`,
+      amount: booking.price,
+      method,
+      entryType: 'BOOKING',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: todayStr,
+      chairId: assignedChair,
+    };
 
-    setEarnings((prev) => [
-      ...prev,
-      {
-        id: 'e_' + Date.now(),
-        desc: `${booking.serviceName} (${booking.token} • ${booking.name})`,
-        amount: booking.price,
-        method,
-        entryType: 'BOOKING',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: todayStr,
-        chairId: assignedChair,
-      },
-    ]);
+    setDoc(doc(db, 'earnings', earningId), newEarning).catch((err) =>
+      console.log('Earning save error:', err)
+    );
   };
 
   const markNoShow = (bookingId: string) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === bookingId ? { ...b, status: 'no_show', chairId: undefined } : b))
-    );
+    updateDoc(doc(db, 'bookings', bookingId), {
+      status: 'no_show',
+      chairId: null,
+    }).catch((err) => console.log('No show error:', err));
   };
 
   const submitReview = async (
@@ -397,11 +366,11 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     photoUri?: string,
     bookingId?: string
   ) => {
-    const targetBooking =
-      bookings.find((b) => b.id === bookingId) || myActiveBooking;
+    const targetBooking = bookings.find((b) => b.id === bookingId) || myActiveBooking;
     const reviewerName = targetBooking?.name || 'Valued Customer';
+    const revId = `rev-${Date.now()}`;
     const newRev: ReviewItem = {
-      id: `rev-${Date.now()}`,
+      id: revId,
       bookingId: targetBooking?.id,
       name: reviewerName,
       rating,
@@ -409,47 +378,59 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       photoUri,
       date: 'Just now',
     };
-    setReviews((prev) => [newRev, ...prev]);
+
+    setDoc(doc(db, 'reviews', revId), newRev).catch((err) => console.log('Review error:', err));
+
     if (targetBooking) {
-      setBookings((prev) =>
-        prev.map((b) => (b.id === targetBooking.id ? { ...b, reviewed: true } : b))
-      );
+      updateDoc(doc(db, 'bookings', targetBooking.id), {
+        reviewed: true,
+      }).catch((err) => console.log('Review flag error:', err));
     }
   };
 
   const updateServicePrice = (id: string, delta: number) => {
-    setServices((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, price: Math.max(10, s.price + delta) } : s))
-    );
+    const srv = services.find((s) => s.id === id);
+    if (!srv) return;
+    const newPrice = Math.max(10, srv.price + delta);
+
+    updateDoc(doc(db, 'services', id), {
+      price: newPrice,
+    }).catch((err) => console.log('Update price error:', err));
   };
 
   const addNewService = (name: string, price: number, duration: number) => {
     if (!name.trim() || !price) return;
+    const sId = `s-${Date.now()}`;
     const created: ServiceItem = {
-      id: `s-${Date.now()}`,
+      id: sId,
       name: name.trim(),
       price,
       duration: duration || 15,
       desc: `Est. ${duration || 15} mins grooming service`,
     };
-    setServices((prev) => [...prev, created]);
+
+    setDoc(doc(db, 'services', sId), created).catch((err) =>
+      console.log('Add service error:', err)
+    );
   };
 
   const addManualEarning = (desc: string, amount: number, method: 'CASH' | 'UPI') => {
     const todayStr = new Date().toISOString().split('T')[0];
-    setEarnings((prev) => [
-      ...prev,
-      {
-        id: 'man_' + Date.now(),
-        desc,
-        amount,
-        method,
-        entryType: 'MANUAL',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: todayStr,
-        chairId: 1,
-      },
-    ]);
+    const earningId = 'man_' + Date.now();
+    const newEarning: EarningRecord = {
+      id: earningId,
+      desc,
+      amount,
+      method,
+      entryType: 'MANUAL',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: todayStr,
+      chairId: 1,
+    };
+
+    setDoc(doc(db, 'earnings', earningId), newEarning).catch((err) =>
+      console.log('Manual earning error:', err)
+    );
   };
 
   return (
