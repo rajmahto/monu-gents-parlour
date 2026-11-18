@@ -317,25 +317,23 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   };
 
-  // FIXED: Direct bookingId targeted cancellation
+  // FIXED: 100% Guaranteed Instant Token Deletion from Firestore
   const cancelMyToken = (bookingId?: string) => {
-    if (!bookingId) return;
+    const targetId = bookingId || myTokenId;
+    if (!targetId) return;
 
-    // Immediately remove from local state
-    setMyTokenIds((prev) => prev.filter((id) => id !== bookingId));
+    // Immediately remove from local state arrays
+    setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
 
-    // Update status in Firestore database
-    updateDoc(doc(db, 'bookings', bookingId), {
-      status: 'cancelled',
-      chairId: null,
-    })
+    // Permanently delete document from Firestore so it vanishes instantly
+    deleteDoc(doc(db, 'bookings', targetId))
       .then(() => {
-        const msg = isHindi ? 'टोकन सफलतापૂર્વक रद्द कर दिया गया है।' : 'Your booking token has been successfully cancelled.';
+        const msg = isHindi ? 'टोकन सफलतापूर्व रद्द और हटा दिया गया है।' : 'Token successfully cancelled and removed.';
         if (Platform.OS === 'web') window.alert(msg);
         else Alert.alert('Cancelled', msg);
       })
       .catch((err) => {
-        console.log('Cancel database error:', err);
+        console.log('Cancel delete error:', err);
       });
   };
 

@@ -62,7 +62,6 @@ export const CustomerTokenPage = () => {
     }, 400);
   };
 
-  // FIXED: Direct bookings filter for instant cancellation UI sync
   const activeBookingsList = bookings.filter((b: any) => 
     (myTokenIds.includes(b.id) || b.type === 'online') && 
     (b.status === 'waiting' || b.status === 'in_service' || (b.status === 'completed' && !b.reviewed))
@@ -226,7 +225,6 @@ export const CustomerTokenPage = () => {
                   )}
                 </View>
 
-                {/* Refined Minimal Luxury Review Box */}
                 {isCompleted && !item.reviewed && (
                   <View
                     style={[
@@ -323,7 +321,6 @@ export const CustomerTokenPage = () => {
         })
       )}
 
-      {/* Visit History Section */}
       <View
         style={[
           styles.ticketCard,
