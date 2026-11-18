@@ -72,6 +72,8 @@ interface SalonContextProps {
 
 const SalonContext = createContext<SalonContextProps | undefined>(undefined);
 
+const DEFAULT_PORTRAIT = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
+
 export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -90,8 +92,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     mapUrl: 'https://goo.gl/maps/e4ekJQoSkE2xMWXB8',
     instaUrl: 'https://instagram.com/monu_gents_parlour',
     youtubeUrl: 'https://youtube.com/@MonuParlourVlogs',
-    ownerPortrait:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85',
+    ownerPortrait: DEFAULT_PORTRAIT,
   });
 
   const [services, setServices] = useState<ServiceItem[]>([
@@ -128,7 +129,17 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setParlourPhotos(data.parlourPhotos);
           }
           if (data.salonInfo) {
-            setSalonInfo((prev) => ({ ...prev, ...data.salonInfo }));
+            // Guard: Never allow blob links from database to break rendering
+            const sanitizedPortrait = 
+              data.salonInfo.ownerPortrait && !data.salonInfo.ownerPortrait.startsWith('blob:')
+                ? data.salonInfo.ownerPortrait
+                : DEFAULT_PORTRAIT;
+
+            setSalonInfo((prev) => ({ 
+              ...prev, 
+              ...data.salonInfo, 
+              ownerPortrait: sanitizedPortrait 
+            }));
           }
           if (data.ownerPassword) {
             setOwnerPassword(data.ownerPassword);
@@ -196,7 +207,20 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateSalonSettings = async (newInfo: Partial<SalonInfo>) => {
     try {
-      const updated = { ...salonInfo, ...newInfo };
+      // Guard: Block any blob link from being saved to Firestore
+      if (newInfo.ownerPortrait && newInfo.ownerPortrait.startsWith('blob:')) {
+        console.log('Blocked local blob link from saving to Firestore');
+        return;
+      }
+
+      const updated = { 
+        ...salonInfo, 
+        ...newInfo,
+        ownerPortrait: newInfo.ownerPortrait && !newInfo.ownerPortrait.startsWith('blob:') 
+          ? newInfo.ownerPortrait 
+          : salonInfo.ownerPortrait || DEFAULT_PORTRAIT
+      };
+
       setSalonInfo(updated);
       await setDoc(doc(db, 'settings', 'salonData'), {
         salonInfo: updated,
