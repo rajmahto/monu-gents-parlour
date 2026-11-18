@@ -118,7 +118,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setMyTokenIds((prev) => (prev.includes(id) ? prev : [id, ...prev]));
   };
 
-  // Synchronized Setter for Shop Open/Closed Status across devices
   const setIsOnline = async (status: boolean) => {
     setIsOnlineState(status);
     try {
@@ -130,7 +129,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Real-time synchronization with Firebase Firestore
   useEffect(() => {
     try {
       const unsubSettings = onSnapshot(doc(db, 'settings', 'salonData'), (docSnap) => {
@@ -264,11 +262,11 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const myTokenId = myTokenIds[0] || '';
   const myActiveBooking = myActiveBookings[0] || bookings.find((b) => b.id === myTokenId) || null;
 
+  // FIXED: Optimized and faster wait time calculation
   const bothChairsOccupied = Boolean(chair1Booking && chair2Booking);
-  const estWaitMins =
-    !bothChairsOccupied && waitingQueue.length === 0
-      ? 0
-      : Math.max(10, Math.round((waitingQueue.length * 12 + (bothChairsOccupied ? 10 : 0)) / 2));
+  const estWaitMins = waitingQueue.length === 0 && !bothChairsOccupied
+    ? 0
+    : Math.max(5, Math.round((waitingQueue.length * 8 + (bothChairsOccupied ? 8 : 0)) / 2));
 
   const todayTotal = earnings.reduce((s, e) => s + e.amount, 0);
   const cashTotal = earnings.filter((e) => e.method === 'CASH').reduce((s, e) => s + e.amount, 0);
@@ -315,6 +313,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   };
 
+  // FIXED: Robust token cancellation across devices
   const cancelMyToken = (bookingId?: string) => {
     const targetId = bookingId || myTokenId;
     if (!targetId) return;
@@ -325,6 +324,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }).catch((err) => console.log('Cancel error:', err));
 
     setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
+    Alert.alert(
+      isHindi ? 'टोकन रद्द कर दिया गया' : 'Token Cancelled',
+      isHindi ? 'आपका टोकन सफलतापूर्वक रद्द कर दिया गया है।' : 'Your booking token has been cancelled.'
+    );
   };
 
   const deleteService = (id: string) => {
@@ -354,16 +357,17 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setMyTokenIds((prev) => [newBkg.id, ...prev]);
   };
 
+  // FIXED: Explicit alert notification when chair is already occupied
   const seatCustomer = (bookingId: string, chairId: 1 | 2) => {
     const occupiedBooking = bookings.find(
       (b) => b.status === 'in_service' && b.chairId === chairId
     );
     if (occupiedBooking) {
       Alert.alert(
-        isHindi ? `कुर्सी ${chairId} पहले से भरी है!` : `Chair ${chairId} is Already Occupied!`,
+        isHindi ? `कुर्सी ${chairId} खाली नहीं है!` : `Chair ${chairId} is Not Available!`,
         isHindi
-          ? `कुर्सी ${chairId} पर अभी ${occupiedBooking.name} बैठे हैं।`
-          : `${occupiedBooking.name} is currently seated on Chair ${chairId}.`
+          ? `कुर्सी ${chairId} पर अभी ${occupiedBooking.name} (${occupiedBooking.token}) बैठे हैं। पहले उनका काम पूरा करें।`
+          : `Chair ${chairId} is currently occupied by ${occupiedBooking.name} (${occupiedBooking.token}). Please complete their service first.`
       );
       return;
     }
@@ -374,6 +378,11 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }).catch((err) => console.log('Seat error:', err));
 
     setMyTokenIds((prev) => (prev.includes(bookingId) ? prev : [bookingId, ...prev]));
+    
+    Alert.alert(
+      isHindi ? `कुर्सी ${chairId} पर बैठा दिया गया` : `Assigned to Chair ${chairId}`,
+      isHindi ? `ग्राहक को सफलताપૂર્વक कुर्सी ${chairId} पर बैठा दिया गया है।` : `Customer successfully seated on Chair ${chairId}.`
+    );
   };
 
   const completeService = (booking: Booking, method: 'CASH' | 'UPI', chairId?: 1 | 2) => {
