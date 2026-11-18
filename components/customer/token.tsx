@@ -204,6 +204,7 @@ export const CustomerTokenPage = () => {
                                 text: isHindi ? 'रद्द करें' : 'Cancel',
                                 style: 'destructive',
                                 onPress: () => {
+                                  // FIXED: Direct item.id passing to cancel function
                                   cancelMyToken(item.id);
                                   showCustomToast(isHindi ? `टोकन ${item.token} रद्द कर दिया गया।` : `Token ${item.token} cancelled.`);
                                 },

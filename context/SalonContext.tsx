@@ -317,31 +317,25 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   };
 
-  // FIXED: 100% Guaranteed Token Cancellation & State Sync
+  // FIXED: Direct bookingId targeted cancellation
   const cancelMyToken = (bookingId?: string) => {
-    const targetId = bookingId || myTokenId;
-    if (!targetId) {
-      const msg = isHindi ? 'रद्द करने के लिए कोई सक्रिय टोकन नहीं मिला।' : 'No active token found to cancel.';
-      if (Platform.OS === 'web') window.alert(msg);
-      else Alert.alert('Notice', msg);
-      return;
-    }
+    if (!bookingId) return;
 
-    // Immediately remove from local active state
-    setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
+    // Immediately remove from local state
+    setMyTokenIds((prev) => prev.filter((id) => id !== bookingId));
 
-    // Update status in Firestore
-    updateDoc(doc(db, 'bookings', targetId), {
+    // Update status in Firestore database
+    updateDoc(doc(db, 'bookings', bookingId), {
       status: 'cancelled',
       chairId: null,
     })
       .then(() => {
-        const msg = isHindi ? 'टोकन सफलताપૂર્વक रद्द कर दिया गया है।' : 'Your booking token has been successfully cancelled.';
+        const msg = isHindi ? 'टोकन सफलतापૂર્વक रद्द कर दिया गया है।' : 'Your booking token has been successfully cancelled.';
         if (Platform.OS === 'web') window.alert(msg);
         else Alert.alert('Cancelled', msg);
       })
       .catch((err) => {
-        console.log('Cancel error:', err);
+        console.log('Cancel database error:', err);
       });
   };
 
