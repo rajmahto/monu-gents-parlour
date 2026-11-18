@@ -48,7 +48,7 @@ export const OwnerSettingsPage = ({
     salonInfo?.youtubeUrl || 'https://youtube.com/@MonuParlourVlogs'
   );
 
-  const defaultMonochromePortrait = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85';
+  const defaultMonochromePortrait = 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd';
   const [heroUrlInput, setHeroUrlInput] = useState('');
 
   // Password Management States

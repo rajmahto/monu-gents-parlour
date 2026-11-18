@@ -72,8 +72,8 @@ interface SalonContextProps {
 
 const SalonContext = createContext<SalonContextProps | undefined>(undefined);
 
-// Hardcoded Monochrome Studio Portrait Default
-const DEFAULT_PORTRAIT = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85';
+// Monu Bhaiya's Original Google Drive Direct Image Link
+const DEFAULT_PORTRAIT = 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd';
 
 export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -131,7 +131,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setSalonInfo((prev) => ({ 
               ...prev, 
               ...data.salonInfo, 
-              ownerPortrait: DEFAULT_PORTRAIT // Force hardcoded monochrome portrait
+              ownerPortrait: DEFAULT_PORTRAIT 
             }));
           }
           if (data.ownerPassword) {
@@ -199,7 +199,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const updated = { 
         ...salonInfo, 
         ...newInfo,
-        ownerPortrait: DEFAULT_PORTRAIT // Always lock to monochrome portrait
+        ownerPortrait: DEFAULT_PORTRAIT 
       };
 
       setSalonInfo(updated);
