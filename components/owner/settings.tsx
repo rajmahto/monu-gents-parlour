@@ -48,7 +48,8 @@ export const OwnerSettingsPage = ({
     salonInfo?.youtubeUrl || 'https://youtube.com/@MonuParlourVlogs'
   );
 
-  // Direct URL Input State
+  // Direct URL Input State (Using Google Drive Direct Thumbnail Link for the Monochrome Portrait)
+  const defaultMonochromePortrait = 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd=w1000';
   const [heroUrlInput, setHeroUrlInput] = useState('');
 
   // Password Management States
@@ -82,7 +83,7 @@ export const OwnerSettingsPage = ({
 
   // Direct URL Save for Desktop
   const handleSaveHeroUrl = async () => {
-    const finalLink = heroUrlInput.trim() || salonInfo?.ownerPortrait || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85';
+    const finalLink = heroUrlInput.trim() || salonInfo?.ownerPortrait || defaultMonochromePortrait;
     await updateSalonSettings({ ownerPortrait: finalLink });
     setHeroUrlInput('');
     alert(isHindi ? 'फोटो लिंक सेव हो गया!' : 'Hero photo URL saved successfully!');
@@ -157,7 +158,7 @@ export const OwnerSettingsPage = ({
 
   const displayPortrait = salonInfo?.ownerPortrait && !salonInfo.ownerPortrait.startsWith('blob:')
     ? salonInfo.ownerPortrait
-    : 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85';
+    : defaultMonochromePortrait;
 
   return (
     <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
@@ -428,7 +429,7 @@ export const OwnerSettingsPage = ({
         </Text>
         <TextInput
           style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
-          placeholder={salonInfo?.ownerPortrait || "https://images.unsplash.com/..."}
+          placeholder={defaultMonochromePortrait}
           placeholderTextColor={theme.muted}
           autoCapitalize="none"
           value={heroUrlInput}
