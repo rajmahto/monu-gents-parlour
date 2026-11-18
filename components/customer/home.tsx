@@ -97,10 +97,8 @@ export const CustomerHomePage = ({
 
   const currentTitle = brandTitles[titleIndex];
 
-  // Secure Image Fallback Handler for Customer Home Screen
-  const customerPortrait = salonInfo?.ownerPortrait && !salonInfo.ownerPortrait.startsWith('blob:')
-    ? salonInfo.ownerPortrait
-    : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
+  // Hardcoded Monochrome Portrait for Customer Home
+  const customerPortrait = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85';
 
   return (
     <ScrollView 

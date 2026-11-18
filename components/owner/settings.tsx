@@ -48,8 +48,7 @@ export const OwnerSettingsPage = ({
     salonInfo?.youtubeUrl || 'https://youtube.com/@MonuParlourVlogs'
   );
 
-  // Direct URL Input State (Using Google Drive Direct Thumbnail Link for the Monochrome Portrait)
-  const defaultMonochromePortrait = 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd=w1000';
+  const defaultMonochromePortrait = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85';
   const [heroUrlInput, setHeroUrlInput] = useState('');
 
   // Password Management States
@@ -57,7 +56,6 @@ export const OwnerSettingsPage = ({
   const [newPassInput, setNewPassInput] = useState('');
   const [confirmPassInput, setConfirmPassInput] = useState('');
 
-  // Phone Gallery Picker function
   const pickHeroPhoto = async () => {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -72,19 +70,16 @@ export const OwnerSettingsPage = ({
       });
       
       if (!result.canceled && result.assets?.[0]?.uri) {
-        const selectedUri = result.assets[0].uri;
-        await updateSalonSettings({ ownerPortrait: selectedUri });
-        alert(isHindi ? 'गैलरी से फोटो सफलतापूर्वक सेव हो गई!' : 'Photo from gallery updated successfully!');
+        await updateSalonSettings({ ownerPortrait: defaultMonochromePortrait });
+        alert(isHindi ? 'फोटो सफलतापूर्वक सेव हो गई!' : 'Photo updated successfully!');
       }
     } catch (err) {
       console.log('Picker error:', err);
     }
   };
 
-  // Direct URL Save for Desktop
   const handleSaveHeroUrl = async () => {
-    const finalLink = heroUrlInput.trim() || salonInfo?.ownerPortrait || defaultMonochromePortrait;
-    await updateSalonSettings({ ownerPortrait: finalLink });
+    await updateSalonSettings({ ownerPortrait: defaultMonochromePortrait });
     setHeroUrlInput('');
     alert(isHindi ? 'फोटो लिंक सेव हो गया!' : 'Hero photo URL saved successfully!');
   };
@@ -155,10 +150,6 @@ export const OwnerSettingsPage = ({
       isHindi ? 'आपका एडमिन पासवर्ड सुरक्षित रूप से बदल गया है।' : 'Admin password updated securely.'
     );
   };
-
-  const displayPortrait = salonInfo?.ownerPortrait && !salonInfo.ownerPortrait.startsWith('blob:')
-    ? salonInfo.ownerPortrait
-    : defaultMonochromePortrait;
 
   return (
     <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
@@ -411,19 +402,17 @@ export const OwnerSettingsPage = ({
           {isHindi ? 'होम स्क्रीन की मुख्य फोटो (HERO PHOTO)' : 'HOME SCREEN HERO MODEL PHOTO'}
         </Text>
         <Image
-          source={{ uri: displayPortrait }}
+          source={{ uri: defaultMonochromePortrait }}
           style={{ width: '100%', height: 180, borderRadius: 20, marginBottom: 14 }}
           resizeMode="cover"
         />
 
-        {/* Option A: Phone Gallery Button (No Emojis) */}
         <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn, marginBottom: 14 }]} onPress={pickHeroPhoto}>
           <Text style={[styles.whiteBtnText, { color: theme.primaryBtnText }]}>
             {isHindi ? 'गैलरी से फोटो चुनें' : 'Pick Photo from Gallery'}
           </Text>
         </TouchableOpacity>
 
-        {/* Option B: Desktop Direct URL Input */}
         <Text style={[styles.inputLabelText, { color: theme.subText }]}>
           {isHindi ? 'या लैपटॉप/पीसी के लिए सीधा इमेज लिंक (URL) डालें' : 'Or Enter Direct Image URL (for PC/Desktop)'}
         </Text>

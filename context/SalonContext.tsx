@@ -72,7 +72,8 @@ interface SalonContextProps {
 
 const SalonContext = createContext<SalonContextProps | undefined>(undefined);
 
-const DEFAULT_PORTRAIT = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
+// Hardcoded Monochrome Studio Portrait Default
+const DEFAULT_PORTRAIT = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85';
 
 export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -118,10 +119,8 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setMyTokenIds((prev) => (prev.includes(id) ? prev : [id, ...prev]));
   };
 
-  // Real-time synchronization with Firebase Firestore
   useEffect(() => {
     try {
-      // Real-time Listener for Salon Settings, Photos & Info
       const unsubSettings = onSnapshot(doc(db, 'settings', 'salonData'), (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
@@ -129,16 +128,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setParlourPhotos(data.parlourPhotos);
           }
           if (data.salonInfo) {
-            // Guard: Never allow blob links from database to break rendering
-            const sanitizedPortrait = 
-              data.salonInfo.ownerPortrait && !data.salonInfo.ownerPortrait.startsWith('blob:')
-                ? data.salonInfo.ownerPortrait
-                : DEFAULT_PORTRAIT;
-
             setSalonInfo((prev) => ({ 
               ...prev, 
               ...data.salonInfo, 
-              ownerPortrait: sanitizedPortrait 
+              ownerPortrait: DEFAULT_PORTRAIT // Force hardcoded monochrome portrait
             }));
           }
           if (data.ownerPassword) {
@@ -147,7 +140,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       });
 
-      // Listen to Bookings in Real-Time
       const unsubBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
         const fetchedBookings: Booking[] = snapshot.docs.map((docSnap) => ({
           ...(docSnap.data() as Booking),
@@ -159,7 +151,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setIsLoaded(true);
       });
 
-      // Listen to Services in Real-Time
       const unsubServices = onSnapshot(collection(db, 'services'), (snapshot) => {
         const fetchedServices: ServiceItem[] = snapshot.docs.map((docSnap) => ({
           ...(docSnap.data() as ServiceItem),
@@ -170,7 +161,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       });
 
-      // Listen to Earnings in Real-Time
       const unsubEarnings = onSnapshot(collection(db, 'earnings'), (snapshot) => {
         const fetchedEarnings: EarningRecord[] = snapshot.docs.map((docSnap) => ({
           ...(docSnap.data() as EarningRecord),
@@ -181,7 +171,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       });
 
-      // Listen to Reviews in Real-Time
       const unsubReviews = onSnapshot(collection(db, 'reviews'), (snapshot) => {
         const fetchedReviews: ReviewItem[] = snapshot.docs.map((docSnap) => ({
           ...(docSnap.data() as ReviewItem),
@@ -207,18 +196,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateSalonSettings = async (newInfo: Partial<SalonInfo>) => {
     try {
-      // Guard: Block any blob link from being saved to Firestore
-      if (newInfo.ownerPortrait && newInfo.ownerPortrait.startsWith('blob:')) {
-        console.log('Blocked local blob link from saving to Firestore');
-        return;
-      }
-
       const updated = { 
         ...salonInfo, 
         ...newInfo,
-        ownerPortrait: newInfo.ownerPortrait && !newInfo.ownerPortrait.startsWith('blob:') 
-          ? newInfo.ownerPortrait 
-          : salonInfo.ownerPortrait || DEFAULT_PORTRAIT
+        ownerPortrait: DEFAULT_PORTRAIT // Always lock to monochrome portrait
       };
 
       setSalonInfo(updated);
