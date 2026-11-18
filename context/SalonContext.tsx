@@ -7,8 +7,7 @@ import {
   doc, 
   setDoc, 
   updateDoc, 
-  deleteDoc, 
-  getDoc 
+  deleteDoc 
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { ServiceItem, Booking, ReviewItem, EarningRecord } from '../types/database';
@@ -72,13 +71,13 @@ interface SalonContextProps {
 
 const SalonContext = createContext<SalonContextProps | undefined>(undefined);
 
-// Monu Bhaiya's Original Google Drive Direct Image Link
+// Monu Bhaiya's Google Drive Direct Image Link
 const DEFAULT_PORTRAIT = 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd';
 
 export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnlineState] = useState(true);
   const [isHindi, setIsHindi] = useState(false);
   const [ownerPassword, setOwnerPassword] = useState('monu123');
 
@@ -119,6 +118,19 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setMyTokenIds((prev) => (prev.includes(id) ? prev : [id, ...prev]));
   };
 
+  // Synchronized Setter for Shop Open/Closed Status across devices
+  const setIsOnline = async (status: boolean) => {
+    setIsOnlineState(status);
+    try {
+      await setDoc(doc(db, 'settings', 'salonData'), {
+        isOnline: status,
+      }, { merge: true });
+    } catch (err) {
+      console.log('Shop status sync error:', err);
+    }
+  };
+
+  // Real-time synchronization with Firebase Firestore
   useEffect(() => {
     try {
       const unsubSettings = onSnapshot(doc(db, 'settings', 'salonData'), (docSnap) => {
@@ -136,6 +148,9 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
           if (data.ownerPassword) {
             setOwnerPassword(data.ownerPassword);
+          }
+          if (typeof data.isOnline === 'boolean') {
+            setIsOnlineState(data.isOnline);
           }
         }
       });
@@ -337,13 +352,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setDoc(doc(db, 'bookings', customId), newBkg).catch((err) => console.log('Walk-in error:', err));
     setMyTokenIds((prev) => [newBkg.id, ...prev]);
-
-    Alert.alert(
-      isHindi ? 'टोकन बन गया' : 'Walk-In Token Created',
-      isHindi
-        ? `${name.trim()} का टोकन (${tokenStr}) कतार में जोड़ दिया गया है।`
-        : `Token ${tokenStr} generated for ${name.trim()}.`
-    );
   };
 
   const seatCustomer = (bookingId: string, chairId: 1 | 2) => {
@@ -354,8 +362,8 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       Alert.alert(
         isHindi ? `कुर्सी ${chairId} पहले से भरी है!` : `Chair ${chairId} is Already Occupied!`,
         isHindi
-          ? `कुर्सी ${chairId} पर अभी ${occupiedBooking.name} (${occupiedBooking.token}) बैठे हैं। पहले फ्लोर टैब में जाकर उनका काम पूरा (Complete) करें।`
-          : `${occupiedBooking.name} (${occupiedBooking.token}) is currently seated on Chair ${chairId}. Please complete their service in the Floor tab first.`
+          ? `कुर्सी ${chairId} पर अभी ${occupiedBooking.name} बैठे हैं।`
+          : `${occupiedBooking.name} is currently seated on Chair ${chairId}.`
       );
       return;
     }
@@ -366,13 +374,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }).catch((err) => console.log('Seat error:', err));
 
     setMyTokenIds((prev) => (prev.includes(bookingId) ? prev : [bookingId, ...prev]));
-
-    Alert.alert(
-      isHindi ? `कुर्सी ${chairId} अलॉट हो गई` : `Seated on Chair ${chairId}`,
-      isHindi
-        ? `ग्राहक को कुर्सी ${chairId} पर बैठा दिया गया है।`
-        : `Customer has been assigned to Chair ${chairId}.`
-    );
   };
 
   const completeService = (booking: Booking, method: 'CASH' | 'UPI', chairId?: 1 | 2) => {
