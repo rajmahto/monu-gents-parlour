@@ -1,6 +1,6 @@
 // context/SalonContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { 
   collection, 
   onSnapshot, 
@@ -262,7 +262,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const myTokenId = myTokenIds[0] || '';
   const myActiveBooking = myActiveBookings[0] || bookings.find((b) => b.id === myTokenId) || null;
 
-  // FIXED: Optimized and faster wait time calculation
   const bothChairsOccupied = Boolean(chair1Booking && chair2Booking);
   const estWaitMins = waitingQueue.length === 0 && !bothChairsOccupied
     ? 0
@@ -272,28 +271,34 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const cashTotal = earnings.filter((e) => e.method === 'CASH').reduce((s, e) => s + e.amount, 0);
   const upiTotal = earnings.filter((e) => e.method === 'UPI').reduce((s, e) => s + e.amount, 0);
 
+  // FIXED: Daily Queue Counter Reset (Starts from #Q-01 every day)
   const bookToken = (name: string, phone: string, service: ServiceItem) => {
     if (!isOnline) {
-      Alert.alert(
-        'Shop is Currently Closed',
-        'Monu Gents Parlour abhi online booking ke liye band hai. Dukan khulne par dobara try karein.'
-      );
+      const msg = isHindi ? 'दुकान अभी बुकिंग के लिए बंद है।' : 'Monu Gents Parlour is currently closed for bookings.';
+      if (Platform.OS === 'web') window.alert(msg);
+      else Alert.alert('Shop Closed', msg);
       return false;
     }
     if (name.trim().length < 2) {
-      Alert.alert('Name Required', 'Kripya apna pura naam daalein (kam se kam 2 letters).');
+      const msg = isHindi ? 'कृपया अपना सही नाम दर्ज करें।' : 'Please enter your full name.';
+      if (Platform.OS === 'web') window.alert(msg);
+      else Alert.alert('Name Required', msg);
       return false;
     }
     if (!/^[6-9]\d{9}$/.test(phone.trim())) {
-      Alert.alert(
-        'Invalid Mobile Number',
-        'Kripya sahi 10-digit mobile number daalein (6, 7, 8 ya 9 se shuru hone wala).'
-      );
+      const msg = isHindi ? 'कृपया वैध 10-अंकों का मोबाइल नंबर दर्ज करें।' : 'Please enter a valid 10-digit mobile number.';
+      if (Platform.OS === 'web') window.alert(msg);
+      else Alert.alert('Invalid Mobile Number', msg);
       return false;
     }
 
-    const nextNum = bookings.length + 1;
-    const tokenStr = `#Q-${String(nextNum).padStart(2, '0')}`;
+    // Count only today's bookings so queue starts from #Q-01 every day
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayBookingsCount = bookings.filter((b) => {
+      return b.time && !b.status.includes('cancelled');
+    }).length + 1;
+
+    const tokenStr = `#Q-${String(todayBookingsCount).padStart(2, '0')}`;
     const customId = `b-${Date.now()}`;
     const newBkg: Booking = {
       id: customId,
@@ -310,24 +315,38 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setDoc(doc(db, 'bookings', customId), newBkg).catch((err) => console.log('Booking error:', err));
     setMyTokenIds((prev) => [newBkg.id, ...prev]);
+
+    const successMsg = isHindi ? `टोकन ${tokenStr} सफलतापूर्वक बुक हो गया!` : `Token ${tokenStr} booked successfully!`;
+    if (Platform.OS === 'web') window.alert(successMsg);
+    else Alert.alert('Success', successMsg);
+
     return true;
   };
 
-  // FIXED: Robust token cancellation across devices
+  // FIXED: Guaranteed Token Cancellation with Web/Mobile Alerts
   const cancelMyToken = (bookingId?: string) => {
     const targetId = bookingId || myTokenId;
-    if (!targetId) return;
+    if (!targetId) {
+      const msg = isHindi ? 'रद्द करने के लिए कोई टोकन नहीं मिला।' : 'No active token found to cancel.';
+      if (Platform.OS === 'web') window.alert(msg);
+      else Alert.alert('Notice', msg);
+      return;
+    }
 
     updateDoc(doc(db, 'bookings', targetId), {
       status: 'no_show',
       chairId: null,
-    }).catch((err) => console.log('Cancel error:', err));
-
-    setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
-    Alert.alert(
-      isHindi ? 'टोकन रद्द कर दिया गया' : 'Token Cancelled',
-      isHindi ? 'आपका टोकन सफलतापूर्वक रद्द कर दिया गया है।' : 'Your booking token has been cancelled.'
-    );
+    })
+      .then(() => {
+        setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
+        const msg = isHindi ? 'टोकन सफलतापूर्वक रद्द कर दिया गया है।' : 'Your booking token has been successfully cancelled.';
+        if (Platform.OS === 'web') window.alert(msg);
+        else Alert.alert('Cancelled', msg);
+      })
+      .catch((err) => {
+        console.log('Cancel error:', err);
+        setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
+      });
   };
 
   const deleteService = (id: string) => {
@@ -336,8 +355,8 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addWalkIn = (name: string, phone: string) => {
     if (name.trim().length < 2) return;
-    const nextNum = bookings.length + 1;
-    const tokenStr = `#Q-${String(nextNum).padStart(2, '0')}`;
+    const todayBookingsCount = bookings.length + 1;
+    const tokenStr = `#Q-${String(todayBookingsCount).padStart(2, '0')}`;
     const srv = services[0] || { name: 'Haircut', price: 40, duration: 15 };
     const customId = `b-${Date.now()}`;
     const newBkg: Booking = {
@@ -357,18 +376,18 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setMyTokenIds((prev) => [newBkg.id, ...prev]);
   };
 
-  // FIXED: Explicit alert notification when chair is already occupied
+  // FIXED: Explicit Notification Alerts for Chair Occupation
   const seatCustomer = (bookingId: string, chairId: 1 | 2) => {
     const occupiedBooking = bookings.find(
       (b) => b.status === 'in_service' && b.chairId === chairId
     );
     if (occupiedBooking) {
-      Alert.alert(
-        isHindi ? `कुर्सी ${chairId} खाली नहीं है!` : `Chair ${chairId} is Not Available!`,
-        isHindi
-          ? `कुर्सी ${chairId} पर अभी ${occupiedBooking.name} (${occupiedBooking.token}) बैठे हैं। पहले उनका काम पूरा करें।`
-          : `Chair ${chairId} is currently occupied by ${occupiedBooking.name} (${occupiedBooking.token}). Please complete their service first.`
-      );
+      const msg = isHindi 
+        ? `कुर्सी ${chairId} पर अभी ${occupiedBooking.name} (${occupiedBooking.token}) बैठे हैं। पहले उनका काम पूरा करें।`
+        : `Chair ${chairId} is currently occupied by ${occupiedBooking.name} (${occupiedBooking.token}). Please complete their service first.`;
+      
+      if (Platform.OS === 'web') window.alert(msg);
+      else Alert.alert(isHindi ? `कुर्सी ${chairId} खाली नहीं है!` : `Chair ${chairId} Occupied!`, msg);
       return;
     }
 
@@ -379,10 +398,9 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setMyTokenIds((prev) => (prev.includes(bookingId) ? prev : [bookingId, ...prev]));
     
-    Alert.alert(
-      isHindi ? `कुर्सी ${chairId} पर बैठा दिया गया` : `Assigned to Chair ${chairId}`,
-      isHindi ? `ग्राहक को सफलताપૂર્વक कुर्सी ${chairId} पर बैठा दिया गया है।` : `Customer successfully seated on Chair ${chairId}.`
-    );
+    const successMsg = isHindi ? `ग्राहक को कुर्सी ${chairId} पर बैठा दिया गया है।` : `Customer successfully seated on Chair ${chairId}.`;
+    if (Platform.OS === 'web') window.alert(successMsg);
+    else Alert.alert('Seated', successMsg);
   };
 
   const completeService = (booking: Booking, method: 'CASH' | 'UPI', chairId?: 1 | 2) => {
