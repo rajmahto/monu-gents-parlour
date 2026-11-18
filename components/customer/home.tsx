@@ -97,8 +97,10 @@ export const CustomerHomePage = ({
 
   const currentTitle = brandTitles[titleIndex];
 
-  // Hardcoded Monochrome Portrait for Customer Home
-  const customerPortrait = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85';
+  // Dynamic Portrait from salonInfo with Google Drive link fallback
+  const customerPortrait = salonInfo?.ownerPortrait && !salonInfo.ownerPortrait.startsWith('blob:')
+    ? salonInfo.ownerPortrait
+    : 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd';
 
   return (
     <ScrollView 
@@ -120,6 +122,8 @@ export const CustomerHomePage = ({
             source={{ uri: customerPortrait }}
             style={[styles.sketchPortraitImg, { opacity: isDarkMode ? 0.88 : 0.94 }]}
             resizeMode="cover"
+            // Verification: Ensures image fills the container symmetrically without awkward side cropping
+            resizeMethod="resize"
           />
           <View
             style={[
@@ -302,14 +306,18 @@ const styles = StyleSheet.create({
   },
   portraitCutoutWrap: {
     position: 'absolute',
-    right: -6,
+    right: 0,
     bottom: 0,
-    width: '64%',
-    height: '88%',
+    width: '75%', // Expanded width so photo centers properly and doesn't cut off Monu bhaiya's face
+    height: '100%',
     borderTopLeftRadius: 90,
     overflow: 'hidden',
   },
-  sketchPortraitImg: { width: '100%', height: '100%' },
+  sketchPortraitImg: { 
+    width: '100%', 
+    height: '100%',
+    transform: [{ scale: 1.05 }] // Slight scale adjustment for perfect framing
+  },
   portraitFadeLeft: { position: 'absolute', left: 0, top: 0, bottom: 0, width: '32%' },
   portraitFadeTop: { position: 'absolute', left: 0, right: 0, top: 0, height: 28 },
   portraitFadeBottom: {
