@@ -18,7 +18,7 @@ import { ChatIcon } from '../../components/common/ChatIcon';
 export const CustomerTokenPage = () => {
   const {
     isDarkMode,
-    myActiveBookings,
+    myTokenIds,
     cancelMyToken,
     submitReview,
     salonInfo,
@@ -62,20 +62,26 @@ export const CustomerTokenPage = () => {
     }, 400);
   };
 
+  // FIXED: Direct bookings filter for instant cancellation UI sync
+  const activeBookingsList = bookings.filter((b: any) => 
+    (myTokenIds.includes(b.id) || b.type === 'online') && 
+    (b.status === 'waiting' || b.status === 'in_service' || (b.status === 'completed' && !b.reviewed))
+  );
+
   const completedHistory = bookings.filter((b: any) => b.status === 'completed');
 
   return (
     <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
       <View style={styles.headerRow}>
         <Text style={[styles.pageTitle, { color: theme.text }]}>
-          {isHindi ? `सक्रिय पास (${myActiveBookings?.length || 0})` : `Active Passes (${myActiveBookings?.length || 0})`}
+          {isHindi ? `सक्रिय पास (${activeBookingsList?.length || 0})` : `Active Passes (${activeBookingsList?.length || 0})`}
         </Text>
         <Text style={[styles.pageSub, { color: theme.subText }]}>
           {isHindi ? 'लाइव कतार ट्रैकिंग और सेशन इतिहास' : 'Live queue tracking & session history'}
         </Text>
       </View>
 
-      {!myActiveBookings || myActiveBookings.length === 0 ? (
+      {!activeBookingsList || activeBookingsList.length === 0 ? (
         <View
           style={[
             styles.ticketCard,
@@ -91,7 +97,7 @@ export const CustomerTokenPage = () => {
           </Text>
         </View>
       ) : (
-        myActiveBookings.map((item: any) => {
+        activeBookingsList.map((item: any) => {
           const isCompleted = item.status === 'completed';
           const isInService = item.status === 'in_service';
           const selectedStars = ratingsMap[item.id] ?? 5;
@@ -204,7 +210,6 @@ export const CustomerTokenPage = () => {
                                 text: isHindi ? 'रद्द करें' : 'Cancel',
                                 style: 'destructive',
                                 onPress: () => {
-                                  // FIXED: Direct item.id passing to cancel function
                                   cancelMyToken(item.id);
                                   showCustomToast(isHindi ? `टोकन ${item.token} रद्द कर दिया गया।` : `Token ${item.token} cancelled.`);
                                 },
