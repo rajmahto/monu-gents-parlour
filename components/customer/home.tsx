@@ -97,6 +97,11 @@ export const CustomerHomePage = ({
 
   const currentTitle = brandTitles[titleIndex];
 
+  // Secure Image Fallback Handler for Customer Home Screen
+  const customerPortrait = salonInfo?.ownerPortrait && !salonInfo.ownerPortrait.startsWith('blob:')
+    ? salonInfo.ownerPortrait
+    : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
+
   return (
     <ScrollView 
       contentContainerStyle={[styles.scrollPad, { paddingTop: dynamicTopPadding }]} 
@@ -114,7 +119,7 @@ export const CustomerHomePage = ({
         />
         <View style={styles.portraitCutoutWrap}>
           <Image
-            source={{ uri: salonInfo.ownerPortrait }}
+            source={{ uri: customerPortrait }}
             style={[styles.sketchPortraitImg, { opacity: isDarkMode ? 0.88 : 0.94 }]}
             resizeMode="cover"
           />
@@ -232,7 +237,7 @@ export const CustomerHomePage = ({
         </View>
       </View>
 
-      {/* Waiting Counter + Book Now Row (Restored Original Layout) */}
+      {/* Waiting Counter + Book Now Row */}
       <View style={styles.waitingBookRow}>
         <View style={styles.waitingBox}>
           <Text style={[styles.waitingLabel, { color: theme.subText }]}>waiting</Text>
