@@ -71,7 +71,6 @@ interface SalonContextProps {
 
 const SalonContext = createContext<SalonContextProps | undefined>(undefined);
 
-// Monu Bhaiya's Google Drive Direct Image Link
 const DEFAULT_PORTRAIT = 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd';
 
 export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -308,6 +307,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setDoc(doc(db, 'bookings', customId), newBkg).catch((err) => console.log('Booking error:', err));
+    // Automatically push to myTokenIds so it tracks instantly
     setMyTokenIds((prev) => [newBkg.id, ...prev]);
 
     const successMsg = isHindi ? `टोकन ${tokenStr} सफलतापूर्वक बुक हो गया!` : `Token ${tokenStr} booked successfully!`;
@@ -317,15 +317,15 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   };
 
-  // FIXED: 100% Guaranteed Instant Token Deletion from Firestore
+  // FIXED: Universal Cancel & Delete (Removes from local list & Firestore)
   const cancelMyToken = (bookingId?: string) => {
     const targetId = bookingId || myTokenId;
     if (!targetId) return;
 
-    // Immediately remove from local state arrays
+    // Immediately wipe from local active tracking state
     setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
 
-    // Permanently delete document from Firestore so it vanishes instantly
+    // Delete from Firestore
     deleteDoc(doc(db, 'bookings', targetId))
       .then(() => {
         const msg = isHindi ? 'टोकन सफलतापूर्व रद्द और हटा दिया गया है।' : 'Token successfully cancelled and removed.';
@@ -425,6 +425,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }).catch((err) => console.log('No show error:', err));
   };
 
+  // FIXED: Flag reviewed true instantly so completed ticket vanishes from active view
   const submitReview = async (
     rating: number,
     comment: string,
@@ -450,6 +451,9 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       updateDoc(doc(db, 'bookings', targetBooking.id), {
         reviewed: true,
       }).catch((err) => console.log('Review flag error:', err));
+
+      // Also remove from local active state immediately
+      setMyTokenIds((prev) => prev.filter((id) => id !== targetBooking.id));
     }
   };
 

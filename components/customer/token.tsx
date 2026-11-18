@@ -62,8 +62,9 @@ export const CustomerTokenPage = () => {
     }, 400);
   };
 
+  // FIXED: Only show active bookings that are NOT reviewed and NOT cancelled
   const activeBookingsList = bookings.filter((b: any) => 
-    (myTokenIds.includes(b.id) || b.type === 'online') && 
+    myTokenIds.includes(b.id) && 
     (b.status === 'waiting' || b.status === 'in_service' || (b.status === 'completed' && !b.reviewed))
   );
 
