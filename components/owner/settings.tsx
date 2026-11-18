@@ -73,7 +73,7 @@ export const OwnerSettingsPage = ({
       if (!result.canceled && result.assets?.[0]?.uri) {
         const selectedUri = result.assets[0].uri;
         await updateSalonSettings({ ownerPortrait: selectedUri });
-        alert(isHindi ? 'गैलरी से फोटो सफलतापूर्व सेव हो गई!' : 'Photo from gallery updated successfully!');
+        alert(isHindi ? 'गैलरी से फोटो सफलतापूर्वक सेव हो गई!' : 'Photo from gallery updated successfully!');
       }
     } catch (err) {
       console.log('Picker error:', err);
@@ -82,7 +82,7 @@ export const OwnerSettingsPage = ({
 
   // Direct URL Save for Desktop
   const handleSaveHeroUrl = async () => {
-    const finalLink = heroUrlInput.trim() || salonInfo?.ownerPortrait || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
+    const finalLink = heroUrlInput.trim() || salonInfo?.ownerPortrait || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85';
     await updateSalonSettings({ ownerPortrait: finalLink });
     setHeroUrlInput('');
     alert(isHindi ? 'फोटो लिंक सेव हो गया!' : 'Hero photo URL saved successfully!');
@@ -157,7 +157,7 @@ export const OwnerSettingsPage = ({
 
   const displayPortrait = salonInfo?.ownerPortrait && !salonInfo.ownerPortrait.startsWith('blob:')
     ? salonInfo.ownerPortrait
-    : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85';
+    : 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85';
 
   return (
     <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
@@ -404,7 +404,7 @@ export const OwnerSettingsPage = ({
         </TouchableOpacity>
       </View>
 
-      {/* 4. Hero Model Photo Hybrid Section */}
+      {/* 4. Hero Model Photo Clean UI Section */}
       <View style={[styles.ownerCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <Text style={[styles.sectionHeader, { color: theme.muted, marginTop: 0 }]}>
           {isHindi ? 'होम स्क्रीन की मुख्य फोटो (HERO PHOTO)' : 'HOME SCREEN HERO MODEL PHOTO'}
@@ -415,10 +415,10 @@ export const OwnerSettingsPage = ({
           resizeMode="cover"
         />
 
-        {/* Option A: Phone Gallery Button */}
+        {/* Option A: Phone Gallery Button (No Emojis) */}
         <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn, marginBottom: 14 }]} onPress={pickHeroPhoto}>
           <Text style={[styles.whiteBtnText, { color: theme.primaryBtnText }]}>
-            {isHindi ? '📱 फोन गैलरी से फोटो चुनें' : '📱 Pick Photo from Phone Gallery'}
+            {isHindi ? 'गैलरी से फोटो चुनें' : 'Pick Photo from Gallery'}
           </Text>
         </TouchableOpacity>
 
@@ -436,7 +436,7 @@ export const OwnerSettingsPage = ({
         />
         <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.green }]} onPress={handleSaveHeroUrl}>
           <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 14 }}>
-            {isHindi ? '🔗 फोटो लिंक सेव करें' : '🔗 Save Photo URL'}
+            {isHindi ? 'फोटो लिंक सेव करें' : 'Save Photo URL'}
           </Text>
         </TouchableOpacity>
       </View>
