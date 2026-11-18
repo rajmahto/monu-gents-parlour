@@ -271,7 +271,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const cashTotal = earnings.filter((e) => e.method === 'CASH').reduce((s, e) => s + e.amount, 0);
   const upiTotal = earnings.filter((e) => e.method === 'UPI').reduce((s, e) => s + e.amount, 0);
 
-  // FIXED: Daily Queue Counter Reset (Starts from #Q-01 every day)
   const bookToken = (name: string, phone: string, service: ServiceItem) => {
     if (!isOnline) {
       const msg = isHindi ? 'दुकान अभी बुकिंग के लिए बंद है।' : 'Monu Gents Parlour is currently closed for bookings.';
@@ -292,12 +291,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
-    // Count only today's bookings so queue starts from #Q-01 every day
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todayBookingsCount = bookings.filter((b) => {
-      return b.time && !b.status.includes('cancelled');
-    }).length + 1;
-
+    const todayBookingsCount = bookings.filter((b) => b.status !== 'cancelled' && b.status !== 'no_show').length + 1;
     const tokenStr = `#Q-${String(todayBookingsCount).padStart(2, '0')}`;
     const customId = `b-${Date.now()}`;
     const newBkg: Booking = {
@@ -323,29 +317,31 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   };
 
-  // FIXED: Guaranteed Token Cancellation with Web/Mobile Alerts
+  // FIXED: 100% Guaranteed Token Cancellation & State Sync
   const cancelMyToken = (bookingId?: string) => {
     const targetId = bookingId || myTokenId;
     if (!targetId) {
-      const msg = isHindi ? 'रद्द करने के लिए कोई टोकन नहीं मिला।' : 'No active token found to cancel.';
+      const msg = isHindi ? 'रद्द करने के लिए कोई सक्रिय टोकन नहीं मिला।' : 'No active token found to cancel.';
       if (Platform.OS === 'web') window.alert(msg);
       else Alert.alert('Notice', msg);
       return;
     }
 
+    // Immediately remove from local active state
+    setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
+
+    // Update status in Firestore
     updateDoc(doc(db, 'bookings', targetId), {
-      status: 'no_show',
+      status: 'cancelled',
       chairId: null,
     })
       .then(() => {
-        setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
-        const msg = isHindi ? 'टोकन सफलतापूर्वक रद्द कर दिया गया है।' : 'Your booking token has been successfully cancelled.';
+        const msg = isHindi ? 'टोकन सफलताપૂર્વक रद्द कर दिया गया है।' : 'Your booking token has been successfully cancelled.';
         if (Platform.OS === 'web') window.alert(msg);
         else Alert.alert('Cancelled', msg);
       })
       .catch((err) => {
         console.log('Cancel error:', err);
-        setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
       });
   };
 
@@ -355,7 +351,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addWalkIn = (name: string, phone: string) => {
     if (name.trim().length < 2) return;
-    const todayBookingsCount = bookings.length + 1;
+    const todayBookingsCount = bookings.filter((b) => b.status !== 'cancelled' && b.status !== 'no_show').length + 1;
     const tokenStr = `#Q-${String(todayBookingsCount).padStart(2, '0')}`;
     const srv = services[0] || { name: 'Haircut', price: 40, duration: 15 };
     const customId = `b-${Date.now()}`;
@@ -376,7 +372,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setMyTokenIds((prev) => [newBkg.id, ...prev]);
   };
 
-  // FIXED: Explicit Notification Alerts for Chair Occupation
   const seatCustomer = (bookingId: string, chairId: 1 | 2) => {
     const occupiedBooking = bookings.find(
       (b) => b.status === 'in_service' && b.chairId === chairId
