@@ -22,6 +22,8 @@ export const CustomerTokenPage = () => {
     submitReview,
     salonInfo,
     bookings,
+    waitingQueue,
+    getEstimatedWaitForBooking,
     isHindi,
   } = useSalon() as any;
 
@@ -116,6 +118,12 @@ export const CustomerTokenPage = () => {
           const selectedStars = ratingsMap[item.id] ?? 5;
           const commentText = commentsMap[item.id] ?? '';
 
+          const queueIdx = waitingQueue.findIndex((q: any) => q.id === item.id);
+          const dynamicWaitMins =
+            typeof getEstimatedWaitForBooking === 'function'
+              ? getEstimatedWaitForBooking(item.id)
+              : item.duration || 10;
+
           return (
             <View key={item.id} style={{ marginBottom: 20 }}>
               <View
@@ -152,7 +160,10 @@ export const CustomerTokenPage = () => {
                         letterSpacing: 0.8,
                       }}
                     >
-                      {item.status === 'waiting' && (isHindi ? 'कतार में हैं' : 'IN QUEUE')}
+                      {item.status === 'waiting' &&
+                        (isHindi
+                          ? `कतार #${queueIdx >= 0 ? queueIdx + 1 : 1}`
+                          : `QUEUE #${queueIdx >= 0 ? queueIdx + 1 : 1}`)}
                       {isInService &&
                         (isHindi ? `कुर्सी 0${item.chairId} पर` : `ON CHAIR 0${item.chairId}`)}
                       {isCompleted && (isHindi ? 'पूरा हो गया' : 'COMPLETED')}
@@ -188,11 +199,15 @@ export const CustomerTokenPage = () => {
                         : 'Grooming completed successfully'
                       : isInService
                       ? isHindi
-                        ? `कुर्सी ${item.chairId} पर बैठे हैं`
-                        : `Seated on Chair ${item.chairId}`
+                        ? `कुर्सी ${item.chairId} पर बैठे हैं • ~${item.duration || 15} मिनट`
+                        : `Seated on Chair ${item.chairId} • ~${item.duration || 15} mins`
+                      : dynamicWaitMins === 0
+                      ? isHindi
+                        ? 'आपकी बारी लगभग आ गई है!'
+                        : 'Your turn is up next!'
                       : isHindi
-                      ? `अनुमानित प्रतीक्षा: ~${item.duration} मिनट`
-                      : `Estimated wait: ~${item.duration} mins`}
+                      ? `अनुमानित प्रतीक्षा: ~${dynamicWaitMins} मिनट • सेवा ~${item.duration || 15} मिनट`
+                      : `Estimated wait: ~${dynamicWaitMins} mins • Service ~${item.duration || 15} mins`}
                   </Text>
 
                   {item.status === 'waiting' && (

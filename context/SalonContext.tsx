@@ -54,6 +54,7 @@ interface SalonContextProps {
   waitingQueue: Booking[];
   myActiveBooking: Booking | null;
   estWaitMins: number;
+  getEstimatedWaitForBooking: (bookingId: string) => number;
   todayTotal: number;
   cashTotal: number;
   upiTotal: number;
@@ -272,11 +273,46 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const myTokenId = myTokenIds[0] || '';
   const myActiveBooking = myActiveBookings[0] || bookings.find((b) => b.id === myTokenId) || null;
 
+  // Smart 2-chair capacity based wait time helper for any specific waiting booking
+  const getEstimatedWaitForBooking = (bookingId: string): number => {
+    const queueIndex = waitingQueue.findIndex((b) => b.id === bookingId);
+    if (queueIndex === -1) return 0;
+
+    const occupiedChairsCount = (chair1Booking ? 1 : 0) + (chair2Booking ? 1 : 0);
+    const activeChairAvgMins =
+      occupiedChairsCount === 2
+        ? Math.round(
+            ((chair1Booking?.duration || 12) + (chair2Booking?.duration || 12)) / 2
+          )
+        : occupiedChairsCount === 1
+        ? chair1Booking?.duration || chair2Booking?.duration || 12
+        : 0;
+
+    const aheadBookings = waitingQueue.slice(0, queueIndex);
+    const aheadDurationSum = aheadBookings.reduce((sum, item) => sum + (item.duration || 12), 0);
+
+    // If at least one chair is free and nobody is ahead in queue, wait is ~0-5 mins
+    if (queueIndex === 0 && occupiedChairsCount < 2) {
+      return 0;
+    }
+
+    // 2 chairs work in parallel, so total load distributes across active chairs (min 2 for full shop)
+    const parallelDivisor = occupiedChairsCount === 2 ? 2 : 1;
+    const rawMins = (aheadDurationSum + (occupiedChairsCount === 2 ? activeChairAvgMins : 0)) / parallelDivisor;
+
+    return Math.max(5, Math.round(rawMins / 5) * 5);
+  };
+
+  // Overall shop estimated wait for a new incoming customer
   const bothChairsOccupied = Boolean(chair1Booking && chair2Booking);
+  const queueTotalMins = waitingQueue.reduce((sum, item) => sum + (item.duration || 12), 0);
   const estWaitMins =
     waitingQueue.length === 0 && !bothChairsOccupied
       ? 0
-      : Math.max(5, Math.round((waitingQueue.length * 8 + (bothChairsOccupied ? 8 : 0)) / 2));
+      : Math.max(
+          5,
+          Math.round(((queueTotalMins + (bothChairsOccupied ? 10 : 0)) / 2) / 5) * 5
+        );
 
   const todayTotal = earnings.reduce((s, e) => s + e.amount, 0);
   const cashTotal = earnings.filter((e) => e.method === 'CASH').reduce((s, e) => s + e.amount, 0);
@@ -555,6 +591,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         waitingQueue,
         myActiveBooking,
         estWaitMins,
+        getEstimatedWaitForBooking,
         todayTotal,
         cashTotal,
         upiTotal,
