@@ -217,6 +217,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setSalonInfo((prev) => ({
               ...prev,
               ...data.salonInfo,
+              phone: data.salonInfo.phone || prev.phone,
               ownerPortrait: DEFAULT_PORTRAIT,
             }));
           }
@@ -282,6 +283,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const updated = {
         ...salonInfo,
         ...newInfo,
+        phone: (newInfo.phone !== undefined ? newInfo.phone : salonInfo.phone).trim(),
         ownerPortrait: DEFAULT_PORTRAIT,
       };
 
@@ -329,7 +331,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Filter today's bookings strictly by YYYY-MM-DD date so previous days never leak into today's queue
   const todayBookings = bookings.filter((b: any) => (b.date || todayStr) === todayStr);
 
   const chair1Booking =
@@ -423,7 +424,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
-    // Prevent duplicate active booking for the same phone number on the same day
     const cleanPhone = phone.trim();
     const existingActiveForPhone = todayBookings.find(
       (b) =>
@@ -439,7 +439,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
-    // Date-scoped daily counter starting from #Q-01 every day
     const todayCount =
       todayBookings.filter((b) => b.status !== 'cancelled' && b.status !== 'no_show').length + 1;
     const tokenStr = `#Q-${String(todayCount).padStart(2, '0')}`;
@@ -510,7 +509,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: customId,
       token: tokenStr,
       name: name.trim(),
-      phone: phone.trim() || '8252870053',
+      phone: phone.trim() || salonInfo.phone,
       serviceName: chosenService.name,
       price: chosenService.price,
       duration: chosenService.duration,

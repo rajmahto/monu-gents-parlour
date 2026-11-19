@@ -1,6 +1,16 @@
 // components/owner/settings.tsx
-import React, { useState } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, TextInput, StyleSheet, Image, Alert, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  ScrollView,
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  Image,
+  Alert,
+  Platform,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useSalon } from '../../context/SalonContext';
 import { getTheme } from '../../constants/theme';
@@ -34,6 +44,23 @@ export const OwnerSettingsPage = ({
   const actualOwnerPass = salonCtx.ownerPassword || 'monu123';
   const setActualOwnerPass = salonCtx.setOwnerPassword;
 
+  const showNotice = (title: string, message: string) => {
+    if (Platform.OS === 'web') {
+      window.alert(`${title}\n${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
+  // Salon Contact Phone State
+  const [phoneInput, setPhoneInput] = useState(salonInfo?.phone || '');
+
+  useEffect(() => {
+    if (salonInfo?.phone !== undefined) {
+      setPhoneInput(salonInfo.phone);
+    }
+  }, [salonInfo?.phone]);
+
   // New Service Form States
   const [newServiceName, setNewServiceName] = useState('');
   const [newServicePrice, setNewServicePrice] = useState('');
@@ -48,7 +75,8 @@ export const OwnerSettingsPage = ({
     salonInfo?.youtubeUrl || 'https://youtube.com/@MonuParlourVlogs'
   );
 
-  const defaultMonochromePortrait = 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd';
+  const defaultMonochromePortrait =
+    'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd';
   const [heroUrlInput, setHeroUrlInput] = useState('');
 
   // Password Management States
@@ -56,11 +84,35 @@ export const OwnerSettingsPage = ({
   const [newPassInput, setNewPassInput] = useState('');
   const [confirmPassInput, setConfirmPassInput] = useState('');
 
+  const handleSaveSalonPhone = async () => {
+    const cleaned = phoneInput.replace(/\D/g, '').trim();
+    if (!/^[6-9]\d{9}$/.test(cleaned)) {
+      showNotice(
+        isHindi ? 'अमान्य नंबर' : 'Invalid Number',
+        isHindi
+          ? 'कृपया वैध 10-अंकों का मोबाइल नंबर दर्ज करें।'
+          : 'Please enter a valid 10-digit mobile number.'
+      );
+      return;
+    }
+    setPhoneInput(cleaned);
+    await updateSalonSettings({ phone: cleaned });
+    showNotice(
+      isHindi ? 'नंबर सेव हो गया' : 'Contact Saved',
+      isHindi
+        ? 'दुकान का संपर्क नंबर सफलतापूर्वक अपडेट हो गया है।'
+        : 'Salon contact number updated across the app.'
+    );
+  };
+
   const pickHeroPhoto = async () => {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        alert(isHindi ? 'फोटो चुनने के लिए गैलरी की अनुमति दें।' : 'Gallery access required.');
+        showNotice(
+          isHindi ? 'अनुमति आवश्यक' : 'Permission Required',
+          isHindi ? 'फोटो चुनने के लिए गैलरी की अनुमति दें।' : 'Gallery access required.'
+        );
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -68,10 +120,13 @@ export const OwnerSettingsPage = ({
         allowsEditing: true,
         quality: 0.85,
       });
-      
+
       if (!result.canceled && result.assets?.[0]?.uri) {
         await updateSalonSettings({ ownerPortrait: defaultMonochromePortrait });
-        alert(isHindi ? 'फोटो सफलतापूर्वक सेव हो गई!' : 'Photo updated successfully!');
+        showNotice(
+          isHindi ? 'फोटो सेव हो गई' : 'Photo Updated',
+          isHindi ? 'फोटो सफलतापूर्वक सेव हो गई!' : 'Photo updated successfully!'
+        );
       }
     } catch (err) {
       console.log('Picker error:', err);
@@ -81,22 +136,29 @@ export const OwnerSettingsPage = ({
   const handleSaveHeroUrl = async () => {
     await updateSalonSettings({ ownerPortrait: defaultMonochromePortrait });
     setHeroUrlInput('');
-    alert(isHindi ? 'फोटो लिंक सेव हो गया!' : 'Hero photo URL saved successfully!');
+    showNotice(
+      isHindi ? 'लिंक सेव हो गया' : 'URL Saved',
+      isHindi ? 'फोटो लिंक सेव हो गया!' : 'Hero photo URL saved successfully!'
+    );
   };
 
   const handleAddService = () => {
     if (!newServiceName.trim() || !newServicePrice) {
-      Alert.alert(
+      showNotice(
         isHindi ? 'जानकारी अधूरी है' : 'Missing Details',
         isHindi ? 'कृपया सर्विस का नाम और रेट (कीमत) डालें।' : 'Please enter service name and price.'
       );
       return;
     }
-    addNewService(newServiceName.trim(), Number(newServicePrice), Number(newServiceDuration) || 15);
+    addNewService(
+      newServiceName.trim(),
+      Number(newServicePrice),
+      Number(newServiceDuration) || 15
+    );
     setNewServiceName('');
     setNewServicePrice('');
     setNewServiceDuration('');
-    Alert.alert(
+    showNotice(
       isHindi ? 'सर्विस जुड़ गई' : 'Service Added',
       isHindi ? 'नई सर्विस रेट कार्ड में जोड़ दी गई है।' : 'New service added to rate card.'
     );
@@ -108,7 +170,7 @@ export const OwnerSettingsPage = ({
       instaUrl: instaLinkInput.trim(),
       youtubeUrl: youtubeLinkInput.trim(),
     });
-    Alert.alert(
+    showNotice(
       isHindi ? 'लिंक सेव हो गए' : 'Links Updated',
       isHindi
         ? 'गूगल मैप्स, इंस्टाग्राम और यूट्यूब लिंक क्लाउड पर सेव हो गए हैं।'
@@ -118,23 +180,27 @@ export const OwnerSettingsPage = ({
 
   const handlePasswordChange = () => {
     if (currentPassInput !== actualOwnerPass) {
-      Alert.alert(
+      showNotice(
         isHindi ? 'गलत पासवर्ड' : 'Error',
         isHindi ? 'आपका पुराना पासवर्ड गलत है!' : 'Current password is incorrect!'
       );
       return;
     }
     if (newPassInput.length < 4) {
-      Alert.alert(
+      showNotice(
         isHindi ? 'छोटा पासवर्ड' : 'Error',
-        isHindi ? 'नया पासवर्ड कम से कम 4 अक्षरों का होना चाहिए।' : 'New password must be at least 4 characters.'
+        isHindi
+          ? 'नया पासवर्ड कम से कम 4 अक्षरों का होना चाहिए।'
+          : 'New password must be at least 4 characters.'
       );
       return;
     }
     if (newPassInput !== confirmPassInput) {
-      Alert.alert(
+      showNotice(
         isHindi ? 'पासवर्ड मैच नहीं हुआ' : 'Error',
-        isHindi ? 'नया पासवर्ड और कन्फर्म पासवर्ड एक जैसे नहीं हैं।' : 'New password and confirm password do not match.'
+        isHindi
+          ? 'नया पासवर्ड और कन्फर्म पासवर्ड एक जैसे नहीं हैं।'
+          : 'New password and confirm password do not match.'
       );
       return;
     }
@@ -145,9 +211,11 @@ export const OwnerSettingsPage = ({
     setCurrentPassInput('');
     setNewPassInput('');
     setConfirmPassInput('');
-    Alert.alert(
+    showNotice(
       isHindi ? 'पासवर्ड बदल गया' : 'Password Updated',
-      isHindi ? 'आपका एडमिन पासवर्ड सुरक्षित रूप से बदल गया है।' : 'Admin password updated securely.'
+      isHindi
+        ? 'आपका एडमिन पासवर्ड सुरक्षित रूप से बदल गया है।'
+        : 'Admin password updated securely.'
     );
   };
 
@@ -251,11 +319,59 @@ export const OwnerSettingsPage = ({
                 backgroundColor: isOnline ? theme.green : theme.red,
               }}
             />
-            <Text style={{ fontWeight: '900', fontSize: 12, color: isOnline ? theme.green : theme.red }}>
+            <Text
+              style={{
+                fontWeight: '900',
+                fontSize: 12,
+                color: isOnline ? theme.green : theme.red,
+              }}
+            >
               {isOnline ? (isHindi ? 'खुली है' : 'OPEN') : isHindi ? 'बंद है' : 'CLOSED'}
             </Text>
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* 1B. Editable Salon Contact Number */}
+      <View style={[styles.ownerCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <ChatIcon name="phone" size={18} color={theme.text} />
+          <Text style={[styles.sectionHeader, { color: theme.muted, marginTop: 0 }]}>
+            {isHindi ? 'दुकान का संपर्क नंबर (CONTACT NUMBER)' : 'SALON CONTACT NUMBER'}
+          </Text>
+        </View>
+        <Text style={[styles.ownerCustMeta, { color: theme.subText, marginBottom: 14 }]}>
+          {isHindi
+            ? 'ग्राहकों के "कॉल करें" बटन और काउंटर फ़ॉलबैक के लिए नंबर यहाँ बदलें:'
+            : 'Update the phone number used for customer Call buttons and walk-in fallback:'}
+        </Text>
+
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.subCard,
+              color: theme.text,
+              borderColor: theme.border,
+              borderWidth: 1,
+            },
+          ]}
+          placeholder={isHindi ? '10 अंकों का मोबाइल नंबर' : '10-Digit Contact Number'}
+          placeholderTextColor={theme.muted}
+          keyboardType="phone-pad"
+          maxLength={10}
+          value={phoneInput}
+          onChangeText={setPhoneInput}
+        />
+
+        <TouchableOpacity
+          style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn }]}
+          onPress={handleSaveSalonPhone}
+        >
+          <Text style={[styles.whiteBtnText, { color: theme.primaryBtnText }]}>
+            {isHindi ? 'संपर्क नंबर सेव करें' : 'Save Contact Number'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* 2. Rate Card & Services Management */}
@@ -270,7 +386,10 @@ export const OwnerSettingsPage = ({
         {services.map((s: any) => (
           <View
             key={s.id}
-            style={[styles.serviceRow, { backgroundColor: theme.subCard, borderColor: theme.border, borderWidth: 1 }]}
+            style={[
+              styles.serviceRow,
+              { backgroundColor: theme.subCard, borderColor: theme.border, borderWidth: 1 },
+            ]}
           >
             <View style={{ flex: 1 }}>
               <Text style={[styles.ownerCustName, { color: theme.text }]}>{s.name}</Text>
@@ -281,13 +400,19 @@ export const OwnerSettingsPage = ({
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <TouchableOpacity
-                style={[styles.priceControlBtn, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]}
+                style={[
+                  styles.priceControlBtn,
+                  { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 },
+                ]}
                 onPress={() => updateServicePrice(s.id, -10)}
               >
                 <Text style={{ color: theme.text, fontWeight: '900' }}>-</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.priceControlBtn, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]}
+                style={[
+                  styles.priceControlBtn,
+                  { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 },
+                ]}
                 onPress={() => updateServicePrice(s.id, 10)}
               >
                 <Text style={{ color: theme.text, fontWeight: '900' }}>+</Text>
@@ -304,12 +429,14 @@ export const OwnerSettingsPage = ({
           </View>
         ))}
 
-        {/* Add New Service Form */}
         <Text style={[styles.sectionHeader, { color: theme.muted, marginTop: 16 }]}>
           {isHindi ? 'नई सर्विस जोड़ें' : 'ADD NEW SERVICE'}
         </Text>
         <TextInput
-          style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 },
+          ]}
           placeholder={isHindi ? 'सर्विस का नाम (जैसे: हेयर कलर)' : 'Service Name (e.g., Hair Coloring)'}
           placeholderTextColor={theme.muted}
           value={newServiceName}
@@ -317,7 +444,10 @@ export const OwnerSettingsPage = ({
         />
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <TextInput
-            style={[styles.input, { flex: 1, backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
+            style={[
+              styles.input,
+              { flex: 1, backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 },
+            ]}
             placeholder={isHindi ? 'रेट (₹)' : 'Price (₹)'}
             placeholderTextColor={theme.muted}
             keyboardType="numeric"
@@ -325,7 +455,10 @@ export const OwnerSettingsPage = ({
             onChangeText={setNewServicePrice}
           />
           <TextInput
-            style={[styles.input, { flex: 1, backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
+            style={[
+              styles.input,
+              { flex: 1, backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 },
+            ]}
             placeholder={isHindi ? 'समय (मिनट में)' : 'Duration (mins)'}
             placeholderTextColor={theme.muted}
             keyboardType="numeric"
@@ -333,7 +466,10 @@ export const OwnerSettingsPage = ({
             onChangeText={setNewServiceDuration}
           />
         </View>
-        <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.green }]} onPress={handleAddService}>
+        <TouchableOpacity
+          style={[styles.whiteBtn, { backgroundColor: theme.green }]}
+          onPress={handleAddService}
+        >
           <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 14 }}>
             {isHindi ? '+ रेट कार्ड में नई सर्विस जोड़ें' : '+ Add Service to Rate Card'}
           </Text>
@@ -357,7 +493,10 @@ export const OwnerSettingsPage = ({
           {isHindi ? 'Google Maps और Review लिंक' : 'Google Maps & Review Link'}
         </Text>
         <TextInput
-          style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 },
+          ]}
           placeholder="https://maps.app.goo.gl/..."
           placeholderTextColor={theme.muted}
           autoCapitalize="none"
@@ -369,7 +508,10 @@ export const OwnerSettingsPage = ({
           {isHindi ? 'Instagram प्रोफाइल लिंक' : 'Instagram Profile Link'}
         </Text>
         <TextInput
-          style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 },
+          ]}
           placeholder="https://instagram.com/monu_gents_parlour"
           placeholderTextColor={theme.muted}
           autoCapitalize="none"
@@ -381,7 +523,10 @@ export const OwnerSettingsPage = ({
           {isHindi ? 'YouTube चैनल लिंक' : 'YouTube Channel Link'}
         </Text>
         <TextInput
-          style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 },
+          ]}
           placeholder="https://youtube.com/@MonuParlourVlogs"
           placeholderTextColor={theme.muted}
           autoCapitalize="none"
@@ -389,7 +534,10 @@ export const OwnerSettingsPage = ({
           onChangeText={setYoutubeLinkInput}
         />
 
-        <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn }]} onPress={handleSaveSocialLinks}>
+        <TouchableOpacity
+          style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn }]}
+          onPress={handleSaveSocialLinks}
+        >
           <Text style={[styles.whiteBtnText, { color: theme.primaryBtnText }]}>
             {isHindi ? 'तीनों लिंक सेव करें' : 'Save Social & Map Links'}
           </Text>
@@ -407,24 +555,35 @@ export const OwnerSettingsPage = ({
           resizeMode="cover"
         />
 
-        <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn, marginBottom: 14 }]} onPress={pickHeroPhoto}>
+        <TouchableOpacity
+          style={[styles.whiteBtn, { backgroundColor: theme.primaryBtn, marginBottom: 14 }]}
+          onPress={pickHeroPhoto}
+        >
           <Text style={[styles.whiteBtnText, { color: theme.primaryBtnText }]}>
             {isHindi ? 'गैलरी से फोटो चुनें' : 'Pick Photo from Gallery'}
           </Text>
         </TouchableOpacity>
 
         <Text style={[styles.inputLabelText, { color: theme.subText }]}>
-          {isHindi ? 'या लैपटॉप/पीसी के लिए सीधा इमेज लिंक (URL) डालें' : 'Or Enter Direct Image URL (for PC/Desktop)'}
+          {isHindi
+            ? 'या लैपटॉप/पीसी के लिए सीधा इमेज लिंक (URL) डालें'
+            : 'Or Enter Direct Image URL (for PC/Desktop)'}
         </Text>
         <TextInput
-          style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 },
+          ]}
           placeholder={defaultMonochromePortrait}
           placeholderTextColor={theme.muted}
           autoCapitalize="none"
           value={heroUrlInput}
           onChangeText={setHeroUrlInput}
         />
-        <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.green }]} onPress={handleSaveHeroUrl}>
+        <TouchableOpacity
+          style={[styles.whiteBtn, { backgroundColor: theme.green }]}
+          onPress={handleSaveHeroUrl}
+        >
           <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 14 }}>
             {isHindi ? 'फोटो लिंक सेव करें' : 'Save Photo URL'}
           </Text>
@@ -446,7 +605,10 @@ export const OwnerSettingsPage = ({
         </Text>
 
         <TextInput
-          style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 },
+          ]}
           placeholder={isHindi ? 'पुराना पासवर्ड (Current Password)' : 'Current Password'}
           placeholderTextColor={theme.muted}
           secureTextEntry
@@ -455,8 +617,13 @@ export const OwnerSettingsPage = ({
           onChangeText={setCurrentPassInput}
         />
         <TextInput
-          style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
-          placeholder={isHindi ? 'नया पासवर्ड (कम से कम 4 अक्षर)' : 'New Password (min 4 chars)'}
+          style={[
+            styles.input,
+            { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 },
+          ]}
+          placeholder={
+            isHindi ? 'नया पासवर्ड (कम से कम 4 अक्षर)' : 'New Password (min 4 chars)'
+          }
           placeholderTextColor={theme.muted}
           secureTextEntry
           autoCapitalize="none"
@@ -464,7 +631,10 @@ export const OwnerSettingsPage = ({
           onChangeText={setNewPassInput}
         />
         <TextInput
-          style={[styles.input, { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.subCard, color: theme.text, borderColor: theme.border, borderWidth: 1 },
+          ]}
           placeholder={isHindi ? 'नया पासवर्ड दोबारा डालें' : 'Confirm New Password'}
           placeholderTextColor={theme.muted}
           secureTextEntry
@@ -473,7 +643,10 @@ export const OwnerSettingsPage = ({
           onChangeText={setConfirmPassInput}
         />
 
-        <TouchableOpacity style={[styles.whiteBtn, { backgroundColor: theme.green }]} onPress={handlePasswordChange}>
+        <TouchableOpacity
+          style={[styles.whiteBtn, { backgroundColor: theme.green }]}
+          onPress={handlePasswordChange}
+        >
           <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 14 }}>
             {isHindi ? 'पासवर्ड सेव करें' : 'Update Password Securely'}
           </Text>

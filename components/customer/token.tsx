@@ -243,7 +243,11 @@ export const CustomerTokenPage = () => {
                           styles.actionBtnOutline,
                           { borderColor: dynamicBorderColor, backgroundColor: theme.subCard },
                         ]}
-                        onPress={() => Linking.openURL(`tel:${salonInfo.phone || '8252870053'}`)}
+                        onPress={() => {
+                          if (salonInfo?.phone) {
+                            Linking.openURL(`tel:${salonInfo.phone}`);
+                          }
+                        }}
                       >
                         <ChatIcon name="phone" size={12} color={theme.text} />
                         <Text style={{ color: theme.text, fontSize: 11, fontWeight: '800' }}>
