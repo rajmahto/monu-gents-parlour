@@ -27,6 +27,7 @@ export const CustomerHomePage = ({
 }) => {
   const {
     isDarkMode,
+    isHindi,
     isOnline,
     salonInfo,
     chair1Booking,
@@ -97,14 +98,27 @@ export const CustomerHomePage = ({
 
   const currentTitle = brandTitles[titleIndex];
 
-  // Dynamic Portrait from salonInfo with Google Drive link fallback
-  const customerPortrait = salonInfo?.ownerPortrait && !salonInfo.ownerPortrait.startsWith('blob:')
-    ? salonInfo.ownerPortrait
-    : 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd';
+  const customerPortrait =
+    salonInfo?.ownerPortrait && !salonInfo.ownerPortrait.startsWith('blob:')
+      ? salonInfo.ownerPortrait
+      : 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd';
+
+  const handleBookNowPress = () => {
+    if (!isOnline) {
+      const title = isHindi ? 'दुकान अभी बंद है' : 'Shop is Currently Closed';
+      const msg = isHindi
+        ? 'मोनू जेंट्स पार्लर में ऑनलाइन बुकिंग अभी बंद है। कृपया दुकान खुलने पर प्रयास करें।'
+        : 'Monu Gents Parlour is currently closed for online bookings. Please try again when the shop opens.';
+      if (Platform.OS === 'web') window.alert(`${title}\n${msg}`);
+      else Alert.alert(title, msg);
+      return;
+    }
+    onOpenBooking();
+  };
 
   return (
-    <ScrollView 
-      contentContainerStyle={[styles.scrollPad, { paddingTop: dynamicTopPadding }]} 
+    <ScrollView
+      contentContainerStyle={[styles.scrollPad, { paddingTop: dynamicTopPadding }]}
       showsVerticalScrollIndicator={false}
     >
       {/* Sketch Hero */}
@@ -122,7 +136,6 @@ export const CustomerHomePage = ({
             source={{ uri: customerPortrait }}
             style={[styles.sketchPortraitImg, { opacity: isDarkMode ? 0.88 : 0.94 }]}
             resizeMode="cover"
-            // Verification: Ensures image fills the container symmetrically without awkward side cropping
             resizeMethod="resize"
           />
           <View
@@ -205,7 +218,13 @@ export const CustomerHomePage = ({
               { color: chair1Booking ? theme.red : theme.green },
             ]}
           >
-            {chair1Booking ? `Occupied (${chair1Booking.token})` : 'Vacant'}
+            {chair1Booking
+              ? isHindi
+                ? `व्यस्त (${chair1Booking.token})`
+                : `Occupied (${chair1Booking.token})`
+              : isHindi
+              ? 'खाली'
+              : 'Vacant'}
           </Text>
         </View>
 
@@ -234,7 +253,13 @@ export const CustomerHomePage = ({
               { color: chair2Booking ? theme.red : theme.green },
             ]}
           >
-            {chair2Booking ? `Occupied (${chair2Booking.token})` : 'Vacant'}
+            {chair2Booking
+              ? isHindi
+                ? `व्यस्त (${chair2Booking.token})`
+                : `Occupied (${chair2Booking.token})`
+              : isHindi
+              ? 'खाली'
+              : 'Vacant'}
           </Text>
         </View>
       </View>
@@ -242,12 +267,21 @@ export const CustomerHomePage = ({
       {/* Waiting Counter + Book Now Row */}
       <View style={styles.waitingBookRow}>
         <View style={styles.waitingBox}>
-          <Text style={[styles.waitingLabel, { color: theme.subText }]}>waiting</Text>
+          <Text style={[styles.waitingLabel, { color: theme.subText }]}>
+            {isHindi ? 'कतार में' : 'waiting'}
+          </Text>
           <Text style={[styles.waitingNumber, { color: theme.text }]}>{waitingQueue.length}</Text>
-          <Text style={{ fontSize: 11, color: theme.muted, fontWeight: '700' }}>
-            {estWaitMins === 0 ? '0 min wait' : `~${estWaitMins} mins`}
+          <Text style={[styles.waitHintText, { color: '#10B981' }]}>
+            {estWaitMins === 0
+              ? isHindi
+                ? '0 मिनट प्रतीक्षा'
+                : '0 min wait'
+              : isHindi
+              ? `~${estWaitMins} मिनट प्रतीक्षा`
+              : `~${estWaitMins} mins wait`}
           </Text>
         </View>
+
         <TouchableOpacity
           activeOpacity={0.85}
           style={[
@@ -258,16 +292,7 @@ export const CustomerHomePage = ({
               borderColor: dynamicBorderColor,
             },
           ]}
-          onPress={() => {
-            if (!isOnline) {
-              Alert.alert(
-                'Shop is Currently Closed',
-                'Monu Gents Parlour is currently closed for online bookings. Please try again when the shop opens.'
-              );
-              return;
-            }
-            onOpenBooking();
-          }}
+          onPress={handleBookNowPress}
         >
           <Text
             style={[
@@ -275,7 +300,13 @@ export const CustomerHomePage = ({
               { color: isOnline ? theme.primaryBtnText : theme.muted },
             ]}
           >
-            {isOnline ? 'Book now' : 'Shop Closed'}
+            {isOnline
+              ? isHindi
+                ? 'अभी बुक करें'
+                : 'Book now'
+              : isHindi
+              ? 'दुकान बंद'
+              : 'Shop Closed'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -308,15 +339,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     bottom: 0,
-    width: '75%', // Expanded width so photo centers properly and doesn't cut off Monu bhaiya's face
+    width: '75%',
     height: '100%',
     borderTopLeftRadius: 90,
     overflow: 'hidden',
   },
-  sketchPortraitImg: { 
-    width: '100%', 
+  sketchPortraitImg: {
+    width: '100%',
     height: '100%',
-    transform: [{ scale: 1.05 }] // Slight scale adjustment for perfect framing
+    transform: [{ scale: 1.05 }],
   },
   portraitFadeLeft: { position: 'absolute', left: 0, top: 0, bottom: 0, width: '32%' },
   portraitFadeTop: { position: 'absolute', left: 0, right: 0, top: 0, height: 28 },
@@ -399,6 +430,7 @@ const styles = StyleSheet.create({
   waitingBox: { alignItems: 'center', paddingHorizontal: 16 },
   waitingLabel: { fontSize: 19, fontWeight: '600' },
   waitingNumber: { fontSize: 42, fontWeight: '900', marginTop: 2 },
+  waitHintText: { fontSize: 11, fontWeight: '800', marginTop: 2 },
   bookNowPill: {
     flex: 1,
     marginLeft: 24,
