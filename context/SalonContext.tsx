@@ -1,6 +1,7 @@
 // context/SalonContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Alert, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   collection,
   onSnapshot,
@@ -11,6 +12,9 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { ServiceItem, Booking, ReviewItem, EarningRecord } from '../types/database';
+
+const MY_TOKENS_STORAGE_KEY = '@monu_parlour_my_token_ids_v1';
+const DISMISSED_COMPLETED_KEY = '@monu_parlour_dismissed_completed_v1';
 
 interface SalonInfo {
   name: string;
@@ -48,6 +52,8 @@ interface SalonContextProps {
   myTokenId: string;
   setMyTokenId: (id: string) => void;
   myTokenIds: string[];
+  dismissedCompletedIds: string[];
+  dismissCompletedCard: (bookingId: string) => void;
   myActiveBookings: Booking[];
   chair1Booking: Booking | null;
   chair2Booking: Booking | null;
@@ -72,7 +78,6 @@ interface SalonContextProps {
 
 const SalonContext = createContext<SalonContextProps | undefined>(undefined);
 
-// Monu Bhaiya's Google Drive Direct Image Link
 const DEFAULT_PORTRAIT = 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd';
 
 export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -113,10 +118,67 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   ]);
 
   const [myTokenIds, setMyTokenIds] = useState<string[]>([]);
+  const [dismissedCompletedIds, setDismissedCompletedIds] = useState<string[]>([]);
+  const [deviceIdsLoaded, setDeviceIdsLoaded] = useState(false);
+
+  // Load device-specific token IDs & dismissed completed IDs so each phone only sees its own passes
+  useEffect(() => {
+    let mounted = true;
+    const loadDeviceTokens = async () => {
+      try {
+        const [savedTokens, savedDismissed] = await Promise.all([
+          AsyncStorage.getItem(MY_TOKENS_STORAGE_KEY),
+          AsyncStorage.getItem(DISMISSED_COMPLETED_KEY),
+        ]);
+        if (!mounted) return;
+        if (savedTokens) {
+          const parsed = JSON.parse(savedTokens);
+          if (Array.isArray(parsed)) setMyTokenIds(parsed);
+        }
+        if (savedDismissed) {
+          const parsedDismissed = JSON.parse(savedDismissed);
+          if (Array.isArray(parsedDismissed)) setDismissedCompletedIds(parsedDismissed);
+        }
+      } catch (err) {
+        console.log('Local token storage load error:', err);
+      } finally {
+        if (mounted) setDeviceIdsLoaded(true);
+      }
+    };
+    loadDeviceTokens();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const persistMyTokenIds = (nextIds: string[]) => {
+    setMyTokenIds(nextIds);
+    AsyncStorage.setItem(MY_TOKENS_STORAGE_KEY, JSON.stringify(nextIds)).catch((err) =>
+      console.log('Save myTokenIds error:', err)
+    );
+  };
 
   const setMyTokenId = (id: string) => {
     if (!id) return;
-    setMyTokenIds((prev) => (prev.includes(id) ? prev : [id, ...prev]));
+    setMyTokenIds((prev) => {
+      const next = prev.includes(id) ? prev : [id, ...prev];
+      AsyncStorage.setItem(MY_TOKENS_STORAGE_KEY, JSON.stringify(next)).catch((err) =>
+        console.log('Save token id error:', err)
+      );
+      return next;
+    });
+  };
+
+  const dismissCompletedCard = (bookingId: string) => {
+    if (!bookingId) return;
+    setDismissedCompletedIds((prev) => {
+      const next = prev.includes(bookingId) ? prev : [...prev, bookingId];
+      AsyncStorage.setItem(DISMISSED_COMPLETED_KEY, JSON.stringify(next)).catch((err) =>
+        console.log('Save dismissed id error:', err)
+      );
+      return next;
+    });
+    updateDoc(doc(db, 'bookings', bookingId), { reviewed: true }).catch(() => {});
   };
 
   const setIsOnline = async (status: boolean) => {
@@ -262,18 +324,20 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const chair2Booking = bookings.find((b) => b.status === 'in_service' && b.chairId === 2) || null;
   const waitingQueue = bookings.filter((b) => b.status === 'waiting');
 
-  const myActiveBookings = bookings.filter(
-    (b) =>
-      myTokenIds.includes(b.id) &&
-      (b.status === 'waiting' ||
-        b.status === 'in_service' ||
-        (b.status === 'completed' && !b.reviewed))
-  );
+  // Strictly scoped to tokens booked/tracked on THIS device
+  const myActiveBookings = !deviceIdsLoaded
+    ? []
+    : bookings.filter(
+        (b) =>
+          myTokenIds.includes(b.id) &&
+          (b.status === 'waiting' ||
+            b.status === 'in_service' ||
+            (b.status === 'completed' && !b.reviewed && !dismissedCompletedIds.includes(b.id)))
+      );
 
   const myTokenId = myTokenIds[0] || '';
   const myActiveBooking = myActiveBookings[0] || bookings.find((b) => b.id === myTokenId) || null;
 
-  // Smart 2-chair capacity based wait time helper for any specific waiting booking
   const getEstimatedWaitForBooking = (bookingId: string): number => {
     const queueIndex = waitingQueue.findIndex((b) => b.id === bookingId);
     if (queueIndex === -1) return 0;
@@ -291,19 +355,17 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const aheadBookings = waitingQueue.slice(0, queueIndex);
     const aheadDurationSum = aheadBookings.reduce((sum, item) => sum + (item.duration || 12), 0);
 
-    // If at least one chair is free and nobody is ahead in queue, wait is ~0-5 mins
     if (queueIndex === 0 && occupiedChairsCount < 2) {
       return 0;
     }
 
-    // 2 chairs work in parallel, so total load distributes across active chairs (min 2 for full shop)
     const parallelDivisor = occupiedChairsCount === 2 ? 2 : 1;
-    const rawMins = (aheadDurationSum + (occupiedChairsCount === 2 ? activeChairAvgMins : 0)) / parallelDivisor;
+    const rawMins =
+      (aheadDurationSum + (occupiedChairsCount === 2 ? activeChairAvgMins : 0)) / parallelDivisor;
 
     return Math.max(5, Math.round(rawMins / 5) * 5);
   };
 
-  // Overall shop estimated wait for a new incoming customer
   const bothChairsOccupied = Boolean(chair1Booking && chair2Booking);
   const queueTotalMins = waitingQueue.reduce((sum, item) => sum + (item.duration || 12), 0);
   const estWaitMins =
@@ -360,7 +422,9 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setDoc(doc(db, 'bookings', customId), newBkg).catch((err) => console.log('Booking error:', err));
-    setMyTokenIds((prev) => [newBkg.id, ...prev]);
+
+    const nextIds = myTokenIds.includes(newBkg.id) ? myTokenIds : [newBkg.id, ...myTokenIds];
+    persistMyTokenIds(nextIds);
 
     const successMsg = isHindi
       ? `टोकन ${tokenStr} सफलतापूर्वक बुक हो गया!`
@@ -375,7 +439,8 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const targetId = bookingId || myTokenId;
     if (!targetId) return;
 
-    setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
+    const nextIds = myTokenIds.filter((id) => id !== targetId);
+    persistMyTokenIds(nextIds);
     setBookings((prev) => prev.filter((b) => b.id !== targetId));
 
     deleteDoc(doc(db, 'bookings', targetId))
@@ -395,6 +460,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     deleteDoc(doc(db, 'services', id)).catch((err) => console.log('Delete service error:', err));
   };
 
+  // Walk-in tokens are counter-generated and NOT added to customer's personal device myTokenIds
   const addWalkIn = (name: string, phone: string) => {
     if (name.trim().length < 2) return;
     const todayBookingsCount =
@@ -416,7 +482,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setDoc(doc(db, 'bookings', customId), newBkg).catch((err) => console.log('Walk-in error:', err));
-    setMyTokenIds((prev) => [newBkg.id, ...prev]);
   };
 
   const seatCustomer = (bookingId: string, chairId: 1 | 2) => {
@@ -442,8 +507,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       chairId,
     }).catch((err) => console.log('Seat error:', err));
 
-    setMyTokenIds((prev) => (prev.includes(bookingId) ? prev : [bookingId, ...prev]));
-
     const successMsg = isHindi
       ? `ग्राहक को कुर्सी ${chairId} पर बैठा दिया गया है।`
       : `Customer successfully seated on Chair ${chairId}.`;
@@ -458,8 +521,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       status: 'completed',
       chairId: null,
     }).catch((err) => console.log('Complete booking error:', err));
-
-    setMyTokenIds((prev) => (prev.includes(booking.id) ? prev : [booking.id, ...prev]));
 
     const todayStr = new Date().toISOString().split('T')[0];
     const earningId = 'e_' + Date.now();
@@ -512,7 +573,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         reviewed: true,
       }).catch((err) => console.log('Review flag error:', err));
 
-      setMyTokenIds((prev) => prev.filter((id) => id !== targetBooking.id));
+      dismissCompletedCard(targetBooking.id);
     }
   };
 
@@ -585,6 +646,8 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         myTokenId,
         setMyTokenId,
         myTokenIds,
+        dismissedCompletedIds,
+        dismissCompletedCard,
         myActiveBookings,
         chair1Booking,
         chair2Booking,

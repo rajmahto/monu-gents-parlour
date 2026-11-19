@@ -18,6 +18,8 @@ import { ChatIcon } from '../../components/common/ChatIcon';
 export const CustomerTokenPage = () => {
   const {
     isDarkMode,
+    myActiveBookings,
+    dismissCompletedCard,
     cancelMyToken,
     submitReview,
     salonInfo,
@@ -67,13 +69,7 @@ export const CustomerTokenPage = () => {
     }, 400);
   };
 
-  const activeBookingsList = bookings.filter(
-    (b: any) =>
-      b.status === 'waiting' ||
-      b.status === 'in_service' ||
-      (b.status === 'completed' && !b.reviewed)
-  );
-
+  const activeBookingsList: any[] = myActiveBookings || [];
   const completedHistory = bookings.filter((b: any) => b.status === 'completed');
 
   return (
@@ -81,15 +77,17 @@ export const CustomerTokenPage = () => {
       <View style={styles.headerRow}>
         <Text style={[styles.pageTitle, { color: theme.text }]}>
           {isHindi
-            ? `सक्रिय पास (${activeBookingsList?.length || 0})`
-            : `Active Passes (${activeBookingsList?.length || 0})`}
+            ? `मेरे सक्रिय पास (${activeBookingsList.length})`
+            : `My Active Passes (${activeBookingsList.length})`}
         </Text>
         <Text style={[styles.pageSub, { color: theme.subText }]}>
-          {isHindi ? 'लाइव कतार ट्रैकिंग और सेशन इतिहास' : 'Live queue tracking & session history'}
+          {isHindi
+            ? 'इस डिवाइस के टोकन और सेशन इतिहास'
+            : 'Tokens booked on this device & visit history'}
         </Text>
       </View>
 
-      {!activeBookingsList || activeBookingsList.length === 0 ? (
+      {activeBookingsList.length === 0 ? (
         <View
           style={[
             styles.ticketCard,
@@ -140,34 +138,61 @@ export const CustomerTokenPage = () => {
                   <Text style={[styles.salonBrandTag, { color: theme.muted }]}>
                     {item.name.toUpperCase()} • {item.time}
                   </Text>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      {
-                        backgroundColor:
-                          isCompleted || isInService
-                            ? 'rgba(16, 185, 129, 0.1)'
-                            : 'rgba(245, 158, 11, 0.1)',
-                        borderColor: isCompleted || isInService ? '#10B981' : '#F59E0B',
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 9,
-                        fontWeight: '900',
-                        color: isCompleted || isInService ? '#10B981' : '#F59E0B',
-                        letterSpacing: 0.8,
-                      }}
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        {
+                          backgroundColor:
+                            isCompleted || isInService
+                              ? 'rgba(16, 185, 129, 0.1)'
+                              : 'rgba(245, 158, 11, 0.1)',
+                          borderColor: isCompleted || isInService ? '#10B981' : '#F59E0B',
+                        },
+                      ]}
                     >
-                      {item.status === 'waiting' &&
-                        (isHindi
-                          ? `कतार #${queueIdx >= 0 ? queueIdx + 1 : 1}`
-                          : `QUEUE #${queueIdx >= 0 ? queueIdx + 1 : 1}`)}
-                      {isInService &&
-                        (isHindi ? `कुर्सी 0${item.chairId} पर` : `ON CHAIR 0${item.chairId}`)}
-                      {isCompleted && (isHindi ? 'पूरा हो गया' : 'COMPLETED')}
-                    </Text>
+                      <Text
+                        style={{
+                          fontSize: 9,
+                          fontWeight: '900',
+                          color: isCompleted || isInService ? '#10B981' : '#F59E0B',
+                          letterSpacing: 0.8,
+                        }}
+                      >
+                        {item.status === 'waiting' &&
+                          (isHindi
+                            ? `कतार #${queueIdx >= 0 ? queueIdx + 1 : 1}`
+                            : `QUEUE #${queueIdx >= 0 ? queueIdx + 1 : 1}`)}
+                        {isInService &&
+                          (isHindi ? `कुर्सी 0${item.chairId} पर` : `ON CHAIR 0${item.chairId}`)}
+                        {isCompleted && (isHindi ? 'पूरा हो गया' : 'COMPLETED')}
+                      </Text>
+                    </View>
+
+                    {isCompleted && (
+                      <TouchableOpacity
+                        activeOpacity={0.75}
+                        accessibilityLabel="Dismiss completed card"
+                        style={[
+                          styles.dismissBtn,
+                          {
+                            backgroundColor: theme.subCard,
+                            borderColor: dynamicBorderColor,
+                          },
+                        ]}
+                        onPress={() => {
+                          dismissCompletedCard(item.id);
+                          showCustomToast(
+                            isHindi ? 'कार्ड हटा दिया गया।' : 'Completed card dismissed.'
+                          );
+                        }}
+                      >
+                        <Text style={{ color: theme.text, fontSize: 12, fontWeight: '900' }}>
+                          ✕
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
 
@@ -426,6 +451,14 @@ const styles = StyleSheet.create({
   },
   salonBrandTag: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 99, borderWidth: 1 },
+  dismissBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tokenBigNumber: { fontSize: 52, fontWeight: '900', marginVertical: 2, letterSpacing: 1 },
   ticketActionsRow: { flexDirection: 'row', gap: 10, marginTop: 14, width: '100%' },
   actionBtnOutline: {
