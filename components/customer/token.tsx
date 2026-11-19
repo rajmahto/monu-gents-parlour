@@ -18,7 +18,6 @@ import { ChatIcon } from '../../components/common/ChatIcon';
 export const CustomerTokenPage = () => {
   const {
     isDarkMode,
-    myTokenIds,
     cancelMyToken,
     submitReview,
     salonInfo,
@@ -53,7 +52,11 @@ export const CustomerTokenPage = () => {
     const comment = commentsMap[bookingId] ?? '';
 
     submitReview(rating, comment, undefined, bookingId);
-    showCustomToast(isHindi ? 'रेटिंग सेव हो गई! गूगल मैप्स खुल रहा है...' : 'Rating saved! Opening Google Maps...');
+    showCustomToast(
+      isHindi
+        ? 'रेटिंग सेव हो गई! गूगल मैप्स खुल रहा है...'
+        : 'Rating saved! Opening Google Maps...'
+    );
 
     setTimeout(() => {
       Linking.openURL(googleMapsUrl).catch(() => {
@@ -62,10 +65,11 @@ export const CustomerTokenPage = () => {
     }, 400);
   };
 
-  // FIXED: Only show active bookings that are NOT reviewed and NOT cancelled
-  const activeBookingsList = bookings.filter((b: any) => 
-    myTokenIds.includes(b.id) && 
-    (b.status === 'waiting' || b.status === 'in_service' || (b.status === 'completed' && !b.reviewed))
+  const activeBookingsList = bookings.filter(
+    (b: any) =>
+      b.status === 'waiting' ||
+      b.status === 'in_service' ||
+      (b.status === 'completed' && !b.reviewed)
   );
 
   const completedHistory = bookings.filter((b: any) => b.status === 'completed');
@@ -74,7 +78,9 @@ export const CustomerTokenPage = () => {
     <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
       <View style={styles.headerRow}>
         <Text style={[styles.pageTitle, { color: theme.text }]}>
-          {isHindi ? `सक्रिय पास (${activeBookingsList?.length || 0})` : `Active Passes (${activeBookingsList?.length || 0})`}
+          {isHindi
+            ? `सक्रिय पास (${activeBookingsList?.length || 0})`
+            : `Active Passes (${activeBookingsList?.length || 0})`}
         </Text>
         <Text style={[styles.pageSub, { color: theme.subText }]}>
           {isHindi ? 'लाइव कतार ट्रैकिंग और सेशन इतिहास' : 'Live queue tracking & session history'}
@@ -85,7 +91,12 @@ export const CustomerTokenPage = () => {
         <View
           style={[
             styles.ticketCard,
-            { backgroundColor: theme.card, borderColor: dynamicBorderColor, alignItems: 'center', paddingVertical: 48 },
+            {
+              backgroundColor: theme.card,
+              borderColor: dynamicBorderColor,
+              alignItems: 'center',
+              paddingVertical: 48,
+            },
           ]}
         >
           <ChatIcon name="scissors" size={24} color={theme.muted} />
@@ -93,7 +104,9 @@ export const CustomerTokenPage = () => {
             {isHindi ? 'कोई सक्रिय टोकन नहीं है' : 'No Active Tokens'}
           </Text>
           <Text style={[styles.emptySubtitle, { color: theme.subText }]}>
-            {isHindi ? 'अपनी जगह सुरक्षित करने के लिए होम या सर्विस टैब पर जाएं।' : 'Visit Home or Service tab to secure your spot.'}
+            {isHindi
+              ? 'अपनी जगह सुरक्षित करने के लिए होम या सर्विस टैब पर जाएं।'
+              : 'Visit Home or Service tab to secure your spot.'}
           </Text>
         </View>
       ) : (
@@ -140,7 +153,8 @@ export const CustomerTokenPage = () => {
                       }}
                     >
                       {item.status === 'waiting' && (isHindi ? 'कतार में हैं' : 'IN QUEUE')}
-                      {isInService && (isHindi ? `कुर्सी 0${item.chairId} पर` : `ON CHAIR 0${item.chairId}`)}
+                      {isInService &&
+                        (isHindi ? `कुर्सी 0${item.chairId} पर` : `ON CHAIR 0${item.chairId}`)}
                       {isCompleted && (isHindi ? 'पूरा हो गया' : 'COMPLETED')}
                     </Text>
                   </View>
@@ -169,10 +183,16 @@ export const CustomerTokenPage = () => {
                     }}
                   >
                     {isCompleted
-                      ? (isHindi ? 'ग्रूमिंग सफलतापूर्वक पूरी हुई' : 'Grooming completed successfully')
+                      ? isHindi
+                        ? 'ग्रूमिंग सफलतापूर्वक पूरी हुई'
+                        : 'Grooming completed successfully'
                       : isInService
-                      ? (isHindi ? `कुर्सी ${item.chairId} पर बैठे हैं` : `Seated on Chair ${item.chairId}`)
-                      : (isHindi ? `अनुमानित प्रतीक्षा: ~${item.duration} मिनट` : `Estimated wait: ~${item.duration} mins`)}
+                      ? isHindi
+                        ? `कुर्सी ${item.chairId} पर बैठे हैं`
+                        : `Seated on Chair ${item.chairId}`
+                      : isHindi
+                      ? `अनुमानित प्रतीक्षा: ~${item.duration} मिनट`
+                      : `Estimated wait: ~${item.duration} mins`}
                   </Text>
 
                   {item.status === 'waiting' && (
@@ -201,20 +221,11 @@ export const CustomerTokenPage = () => {
                           },
                         ]}
                         onPress={() => {
-                          Alert.alert(
-                            isHindi ? 'टोकन रद्द करें?' : 'Cancel Token?',
-                            isHindi ? `क्या आप कतार से टोकन ${item.token} हटाना चाहते हैं?` : `Remove token ${item.token} from queue?`,
-                            [
-                              { text: isHindi ? 'रखें' : 'Keep', style: 'cancel' },
-                              {
-                                text: isHindi ? 'रद्द करें' : 'Cancel',
-                                style: 'destructive',
-                                onPress: () => {
-                                  cancelMyToken(item.id);
-                                  showCustomToast(isHindi ? `टोकन ${item.token} रद्द कर दिया गया।` : `Token ${item.token} cancelled.`);
-                                },
-                              },
-                            ]
+                          cancelMyToken(item.id);
+                          showCustomToast(
+                            isHindi
+                              ? `टोकन ${item.token} रद्द कर दिया गया।`
+                              : `Token ${item.token} cancelled.`
                           );
                         }}
                       >
@@ -297,7 +308,9 @@ export const CustomerTokenPage = () => {
                           borderColor: dynamicBorderColor,
                         },
                       ]}
-                      placeholder={isHindi ? 'फीडबैक लिखें (वैकल्पिक)...' : 'Write feedback (optional)...'}
+                      placeholder={
+                        isHindi ? 'फीडबैक लिखें (वैकल्पिक)...' : 'Write feedback (optional)...'
+                      }
                       placeholderTextColor={theme.muted}
                       value={commentText}
                       onChangeText={(txt) =>
@@ -311,7 +324,9 @@ export const CustomerTokenPage = () => {
                       onPress={() => handleReviewAndOpenGoogle(item.id)}
                     >
                       <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 13 }}>
-                        {isHindi ? 'सबमिट करें और गूगल मैप्स पर रेट करें' : 'Submit & Rate on Google Maps'}
+                        {isHindi
+                          ? 'सबमिट करें और गूगल मैप्स पर रेट करें'
+                          : 'Submit & Rate on Google Maps'}
                       </Text>
                     </TouchableOpacity>
                   </View>

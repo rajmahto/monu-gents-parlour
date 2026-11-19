@@ -1,13 +1,13 @@
 // context/SalonContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Alert, Platform } from 'react-native';
-import { 
-  collection, 
-  onSnapshot, 
-  doc, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc 
+import {
+  collection,
+  onSnapshot,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { ServiceItem, Booking, ReviewItem, EarningRecord } from '../types/database';
@@ -71,6 +71,7 @@ interface SalonContextProps {
 
 const SalonContext = createContext<SalonContextProps | undefined>(undefined);
 
+// Monu Bhaiya's Google Drive Direct Image Link
 const DEFAULT_PORTRAIT = 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd';
 
 export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -120,9 +121,13 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const setIsOnline = async (status: boolean) => {
     setIsOnlineState(status);
     try {
-      await setDoc(doc(db, 'settings', 'salonData'), {
-        isOnline: status,
-      }, { merge: true });
+      await setDoc(
+        doc(db, 'settings', 'salonData'),
+        {
+          isOnline: status,
+        },
+        { merge: true }
+      );
     } catch (err) {
       console.log('Shop status sync error:', err);
     }
@@ -137,10 +142,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setParlourPhotos(data.parlourPhotos);
           }
           if (data.salonInfo) {
-            setSalonInfo((prev) => ({ 
-              ...prev, 
-              ...data.salonInfo, 
-              ownerPortrait: DEFAULT_PORTRAIT 
+            setSalonInfo((prev) => ({
+              ...prev,
+              ...data.salonInfo,
+              ownerPortrait: DEFAULT_PORTRAIT,
             }));
           }
           if (data.ownerPassword) {
@@ -157,9 +162,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           ...(docSnap.data() as Booking),
           id: docSnap.id,
         }));
-        if (fetchedBookings.length > 0) {
-          setBookings(fetchedBookings);
-        }
+        setBookings(fetchedBookings);
         setIsLoaded(true);
       });
 
@@ -178,9 +181,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           ...(docSnap.data() as EarningRecord),
           id: docSnap.id,
         }));
-        if (fetchedEarnings.length > 0) {
-          setEarnings(fetchedEarnings);
-        }
+        setEarnings(fetchedEarnings);
       });
 
       const unsubReviews = onSnapshot(collection(db, 'reviews'), (snapshot) => {
@@ -188,9 +189,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           ...(docSnap.data() as ReviewItem),
           id: docSnap.id,
         }));
-        if (fetchedReviews.length > 0) {
-          setReviews(fetchedReviews);
-        }
+        setReviews(fetchedReviews);
       });
 
       return () => {
@@ -208,16 +207,20 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateSalonSettings = async (newInfo: Partial<SalonInfo>) => {
     try {
-      const updated = { 
-        ...salonInfo, 
+      const updated = {
+        ...salonInfo,
         ...newInfo,
-        ownerPortrait: DEFAULT_PORTRAIT 
+        ownerPortrait: DEFAULT_PORTRAIT,
       };
 
       setSalonInfo(updated);
-      await setDoc(doc(db, 'settings', 'salonData'), {
-        salonInfo: updated,
-      }, { merge: true });
+      await setDoc(
+        doc(db, 'settings', 'salonData'),
+        {
+          salonInfo: updated,
+        },
+        { merge: true }
+      );
     } catch (err) {
       console.log('Salon settings save error:', err);
     }
@@ -226,9 +229,13 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateOwnerPasswordSecure = async (newPass: string) => {
     try {
       setOwnerPassword(newPass);
-      await setDoc(doc(db, 'settings', 'salonData'), {
-        ownerPassword: newPass,
-      }, { merge: true });
+      await setDoc(
+        doc(db, 'settings', 'salonData'),
+        {
+          ownerPassword: newPass,
+        },
+        { merge: true }
+      );
     } catch (err) {
       console.log('Password save error:', err);
     }
@@ -238,9 +245,13 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const updatedPhotos = [uri, ...parlourPhotos];
       setParlourPhotos(updatedPhotos);
-      await setDoc(doc(db, 'settings', 'salonData'), {
-        parlourPhotos: updatedPhotos,
-      }, { merge: true });
+      await setDoc(
+        doc(db, 'settings', 'salonData'),
+        {
+          parlourPhotos: updatedPhotos,
+        },
+        { merge: true }
+      );
     } catch (err) {
       console.log('Photo save error:', err);
     }
@@ -262,9 +273,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const myActiveBooking = myActiveBookings[0] || bookings.find((b) => b.id === myTokenId) || null;
 
   const bothChairsOccupied = Boolean(chair1Booking && chair2Booking);
-  const estWaitMins = waitingQueue.length === 0 && !bothChairsOccupied
-    ? 0
-    : Math.max(5, Math.round((waitingQueue.length * 8 + (bothChairsOccupied ? 8 : 0)) / 2));
+  const estWaitMins =
+    waitingQueue.length === 0 && !bothChairsOccupied
+      ? 0
+      : Math.max(5, Math.round((waitingQueue.length * 8 + (bothChairsOccupied ? 8 : 0)) / 2));
 
   const todayTotal = earnings.reduce((s, e) => s + e.amount, 0);
   const cashTotal = earnings.filter((e) => e.method === 'CASH').reduce((s, e) => s + e.amount, 0);
@@ -272,7 +284,9 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const bookToken = (name: string, phone: string, service: ServiceItem) => {
     if (!isOnline) {
-      const msg = isHindi ? 'दुकान अभी बुकिंग के लिए बंद है।' : 'Monu Gents Parlour is currently closed for bookings.';
+      const msg = isHindi
+        ? 'दुकान अभी बुकिंग के लिए बंद है।'
+        : 'Monu Gents Parlour is currently closed for bookings.';
       if (Platform.OS === 'web') window.alert(msg);
       else Alert.alert('Shop Closed', msg);
       return false;
@@ -284,13 +298,16 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
     if (!/^[6-9]\d{9}$/.test(phone.trim())) {
-      const msg = isHindi ? 'कृपया वैध 10-अंकों का मोबाइल नंबर दर्ज करें।' : 'Please enter a valid 10-digit mobile number.';
+      const msg = isHindi
+        ? 'कृपया वैध 10-अंकों का मोबाइल नंबर दर्ज करें।'
+        : 'Please enter a valid 10-digit mobile number.';
       if (Platform.OS === 'web') window.alert(msg);
       else Alert.alert('Invalid Mobile Number', msg);
       return false;
     }
 
-    const todayBookingsCount = bookings.filter((b) => b.status !== 'cancelled' && b.status !== 'no_show').length + 1;
+    const todayBookingsCount =
+      bookings.filter((b) => b.status !== 'cancelled' && b.status !== 'no_show').length + 1;
     const tokenStr = `#Q-${String(todayBookingsCount).padStart(2, '0')}`;
     const customId = `b-${Date.now()}`;
     const newBkg: Booking = {
@@ -307,28 +324,29 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setDoc(doc(db, 'bookings', customId), newBkg).catch((err) => console.log('Booking error:', err));
-    // Automatically push to myTokenIds so it tracks instantly
     setMyTokenIds((prev) => [newBkg.id, ...prev]);
 
-    const successMsg = isHindi ? `टोकन ${tokenStr} सफलतापूर्वक बुक हो गया!` : `Token ${tokenStr} booked successfully!`;
+    const successMsg = isHindi
+      ? `टोकन ${tokenStr} सफलतापूर्वक बुक हो गया!`
+      : `Token ${tokenStr} booked successfully!`;
     if (Platform.OS === 'web') window.alert(successMsg);
     else Alert.alert('Success', successMsg);
 
     return true;
   };
 
-  // FIXED: Universal Cancel & Delete (Removes from local list & Firestore)
   const cancelMyToken = (bookingId?: string) => {
     const targetId = bookingId || myTokenId;
     if (!targetId) return;
 
-    // Immediately wipe from local active tracking state
     setMyTokenIds((prev) => prev.filter((id) => id !== targetId));
+    setBookings((prev) => prev.filter((b) => b.id !== targetId));
 
-    // Delete from Firestore
     deleteDoc(doc(db, 'bookings', targetId))
       .then(() => {
-        const msg = isHindi ? 'टोकन सफलतापूर्व रद्द और हटा दिया गया है।' : 'Token successfully cancelled and removed.';
+        const msg = isHindi
+          ? 'टोकन सफलतापूर्वक रद्द और हटा दिया गया है।'
+          : 'Token successfully cancelled and removed.';
         if (Platform.OS === 'web') window.alert(msg);
         else Alert.alert('Cancelled', msg);
       })
@@ -343,7 +361,8 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addWalkIn = (name: string, phone: string) => {
     if (name.trim().length < 2) return;
-    const todayBookingsCount = bookings.filter((b) => b.status !== 'cancelled' && b.status !== 'no_show').length + 1;
+    const todayBookingsCount =
+      bookings.filter((b) => b.status !== 'cancelled' && b.status !== 'no_show').length + 1;
     const tokenStr = `#Q-${String(todayBookingsCount).padStart(2, '0')}`;
     const srv = services[0] || { name: 'Haircut', price: 40, duration: 15 };
     const customId = `b-${Date.now()}`;
@@ -369,12 +388,16 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       (b) => b.status === 'in_service' && b.chairId === chairId
     );
     if (occupiedBooking) {
-      const msg = isHindi 
+      const msg = isHindi
         ? `कुर्सी ${chairId} पर अभी ${occupiedBooking.name} (${occupiedBooking.token}) बैठे हैं। पहले उनका काम पूरा करें।`
         : `Chair ${chairId} is currently occupied by ${occupiedBooking.name} (${occupiedBooking.token}). Please complete their service first.`;
-      
+
       if (Platform.OS === 'web') window.alert(msg);
-      else Alert.alert(isHindi ? `कुर्सी ${chairId} खाली नहीं है!` : `Chair ${chairId} Occupied!`, msg);
+      else
+        Alert.alert(
+          isHindi ? `कुर्सी ${chairId} खाली नहीं है!` : `Chair ${chairId} Occupied!`,
+          msg
+        );
       return;
     }
 
@@ -384,8 +407,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }).catch((err) => console.log('Seat error:', err));
 
     setMyTokenIds((prev) => (prev.includes(bookingId) ? prev : [bookingId, ...prev]));
-    
-    const successMsg = isHindi ? `ग्राहक को कुर्सी ${chairId} पर बैठा दिया गया है।` : `Customer successfully seated on Chair ${chairId}.`;
+
+    const successMsg = isHindi
+      ? `ग्राहक को कुर्सी ${chairId} पर बैठा दिया गया है।`
+      : `Customer successfully seated on Chair ${chairId}.`;
     if (Platform.OS === 'web') window.alert(successMsg);
     else Alert.alert('Seated', successMsg);
   };
@@ -425,7 +450,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }).catch((err) => console.log('No show error:', err));
   };
 
-  // FIXED: Flag reviewed true instantly so completed ticket vanishes from active view
   const submitReview = async (
     rating: number,
     comment: string,
@@ -452,7 +476,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         reviewed: true,
       }).catch((err) => console.log('Review flag error:', err));
 
-      // Also remove from local active state immediately
       setMyTokenIds((prev) => prev.filter((id) => id !== targetBooking.id));
     }
   };
