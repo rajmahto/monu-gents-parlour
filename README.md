@@ -2,8 +2,8 @@
 
 A real-time **React Native (Expo) + TypeScript + Firebase Firestore** queue, 2-chair floor control, rate card, and revenue reporting application built for **Monu Gents Parlour** (Azadnagar, Gomoh, Dhanbad, Jharkhand).
 
-- **Live Web App:** https://monu-gents-parlour-6skd42rlb-work-sphere6.vercel.app
-- **GitHub Repository:** https://github.com/rajmahto/monu-gents-parlour
+- **Live Web App:** [https://monu-gents-parlour-6skd42rlb-work-sphere6.vercel.app](https://monu-gents-parlour-6skd42rlb-work-sphere6.vercel.app)
+- **GitHub Repository:** [https://github.com/rajmahto/monu-gents-parlour](https://github.com/rajmahto/monu-gents-parlour)
 
 ---
 
@@ -74,13 +74,14 @@ A real-time **React Native (Expo) + TypeScript + Firebase Firestore** queue, 2-c
 
 ## Screenshots
 
-> Tip: Create a `screenshots/` folder in the repository root and place your app screenshots there so they render directly on GitHub.
+### Owner Console — Earnings & Dynamic Service Summary
+![Owner Console — Earnings & Dynamic Service Summary](screenshots/owner-earnings-dynamic.png)
 
-| Screen | Preview Path | Description |
-| :--- | :--- | :--- |
-| **Owner Console — Earnings & Dynamic Service Summary** | `screenshots/owner-earnings-dynamic.png` | Revenue summary, Cash/UPI breakdown, chair counts, and dynamic active service cards. |
-| **Owner Console — Rate Card & Active Services** | `screenshots/owner-services.png` | Active services list (`Hair colour`, `Haircut`, etc.) and Add New Service form. |
-| **Customer — Active Passes & Rating Card** | `screenshots/customer-active-passes.png` | Token pass status, estimated wait time, rating stars, and completed card dismissal. |
+### Owner Console — Rate Card & Active Services
+![Owner Console — Rate Card & Active Services](screenshots/owner-services.png)
+
+### Customer — Active Passes & Rating Card
+![Customer — Active Passes & Rating Card](screenshots/customer-active-passes.png)
 
 ---
 
@@ -126,7 +127,7 @@ monu-gents-parlour/
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/rajmahto/monu-gents-parlour.git](https://github.com/rajmahto/monu-gents-parlour.git)
+   git clone https://github.com/rajmahto/monu-gents-parlour.git
    cd monu-gents-parlour
    ```
 
@@ -146,3 +147,14 @@ monu-gents-parlour/
    - Scan the QR code with **Expo Go** to test on an Android/iOS device.
 
 ---
+
+## Owner Handover Guide (For Monu Bhaiya)
+
+1. **Opening & Closing the Shop:** Use the **Shop OPEN / CLOSED** toggle on **Floor** or **Settings** to pause or resume new online bookings anytime.
+2. **Managing Tokens & Chairs:**
+   - Online customers get a token (`#Q-01`, `#Q-02`, ...) and appear in **Queue**.
+   - Walk-in customers can be added directly from **Queue** using **WalkInCard** by selecting their service and entering their name.
+   - Tap **Seat Chair 1** or **Seat Chair 2** to move a customer onto a chair.
+   - Once grooming is done, go to **Floor**, verify/edit the amount, select **CASH** or **UPI**, and tap **Mark Service Complete & Save**.
+3. **Updating Rates, Phone Number & Links:** Go to **Settings** to add/edit/delete services, update the salon contact number, change Google Maps / Instagram / YouTube links, or change the admin password.
+4. **Downloading Earnings Reports:** Open **Earnings**, choose `TODAY`, `WEEK`, `MONTH`, or `YEAR`, and tap **Export Excel** to download a `.csv` file with transaction rows plus month-wise and year-wise summaries.
