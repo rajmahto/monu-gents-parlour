@@ -66,7 +66,7 @@ interface SalonContextProps {
   upiTotal: number;
   bookToken: (name: string, phone: string, service: ServiceItem) => boolean;
   cancelMyToken: (bookingId?: string) => void;
-  addWalkIn: (name: string, phone: string) => void;
+  addWalkIn: (name: string, phone: string, serviceId?: string) => void;
   seatCustomer: (bookingId: string, chairId: 1 | 2) => void;
   completeService: (booking: Booking, method: 'CASH' | 'UPI', chairId?: 1 | 2) => void;
   markNoShow: (bookingId: string) => void;
@@ -78,7 +78,15 @@ interface SalonContextProps {
 
 const SalonContext = createContext<SalonContextProps | undefined>(undefined);
 
+// Monu Bhaiya's Google Drive Direct Image Link
 const DEFAULT_PORTRAIT = 'https://lh3.googleusercontent.com/d/1KPFRTVNJPTA5RY1DjpQWn0DJY1E6zDTd';
+
+const getLocalDateStr = (d: Date = new Date()): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -121,7 +129,8 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [dismissedCompletedIds, setDismissedCompletedIds] = useState<string[]>([]);
   const [deviceIdsLoaded, setDeviceIdsLoaded] = useState(false);
 
-  // Load device-specific token IDs & dismissed completed IDs so each phone only sees its own passes
+  const todayStr = getLocalDateStr();
+
   useEffect(() => {
     let mounted = true;
     const loadDeviceTokens = async () => {
@@ -320,14 +329,18 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const chair1Booking = bookings.find((b) => b.status === 'in_service' && b.chairId === 1) || null;
-  const chair2Booking = bookings.find((b) => b.status === 'in_service' && b.chairId === 2) || null;
-  const waitingQueue = bookings.filter((b) => b.status === 'waiting');
+  // Filter today's bookings strictly by YYYY-MM-DD date so previous days never leak into today's queue
+  const todayBookings = bookings.filter((b: any) => (b.date || todayStr) === todayStr);
 
-  // Strictly scoped to tokens booked/tracked on THIS device
+  const chair1Booking =
+    todayBookings.find((b) => b.status === 'in_service' && b.chairId === 1) || null;
+  const chair2Booking =
+    todayBookings.find((b) => b.status === 'in_service' && b.chairId === 2) || null;
+  const waitingQueue = todayBookings.filter((b) => b.status === 'waiting');
+
   const myActiveBookings = !deviceIdsLoaded
     ? []
-    : bookings.filter(
+    : todayBookings.filter(
         (b) =>
           myTokenIds.includes(b.id) &&
           (b.status === 'waiting' ||
@@ -336,7 +349,8 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       );
 
   const myTokenId = myTokenIds[0] || '';
-  const myActiveBooking = myActiveBookings[0] || bookings.find((b) => b.id === myTokenId) || null;
+  const myActiveBooking =
+    myActiveBookings[0] || todayBookings.find((b) => b.id === myTokenId) || null;
 
   const getEstimatedWaitForBooking = (bookingId: string): number => {
     const queueIndex = waitingQueue.findIndex((b) => b.id === bookingId);
@@ -376,9 +390,14 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           Math.round(((queueTotalMins + (bothChairsOccupied ? 10 : 0)) / 2) / 5) * 5
         );
 
-  const todayTotal = earnings.reduce((s, e) => s + e.amount, 0);
-  const cashTotal = earnings.filter((e) => e.method === 'CASH').reduce((s, e) => s + e.amount, 0);
-  const upiTotal = earnings.filter((e) => e.method === 'UPI').reduce((s, e) => s + e.amount, 0);
+  const todayEarningsList = earnings.filter((e: any) => (e.date || todayStr) === todayStr);
+  const todayTotal = todayEarningsList.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const cashTotal = todayEarningsList
+    .filter((e) => e.method === 'CASH')
+    .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const upiTotal = todayEarningsList
+    .filter((e) => e.method === 'UPI')
+    .reduce((s, e) => s + (Number(e.amount) || 0), 0);
 
   const bookToken = (name: string, phone: string, service: ServiceItem) => {
     if (!isOnline) {
@@ -404,20 +423,38 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
-    const todayBookingsCount =
-      bookings.filter((b) => b.status !== 'cancelled' && b.status !== 'no_show').length + 1;
-    const tokenStr = `#Q-${String(todayBookingsCount).padStart(2, '0')}`;
+    // Prevent duplicate active booking for the same phone number on the same day
+    const cleanPhone = phone.trim();
+    const existingActiveForPhone = todayBookings.find(
+      (b) =>
+        b.phone === cleanPhone &&
+        (b.status === 'waiting' || b.status === 'in_service')
+    );
+    if (existingActiveForPhone) {
+      const msg = isHindi
+        ? `इस नंबर पर आज पहले से टोकन ${existingActiveForPhone.token} सक्रिय है।`
+        : `Token ${existingActiveForPhone.token} is already active for this mobile number today.`;
+      if (Platform.OS === 'web') window.alert(msg);
+      else Alert.alert('Active Token Exists', msg);
+      return false;
+    }
+
+    // Date-scoped daily counter starting from #Q-01 every day
+    const todayCount =
+      todayBookings.filter((b) => b.status !== 'cancelled' && b.status !== 'no_show').length + 1;
+    const tokenStr = `#Q-${String(todayCount).padStart(2, '0')}`;
     const customId = `b-${Date.now()}`;
-    const newBkg: Booking = {
+    const newBkg: any = {
       id: customId,
       token: tokenStr,
       name: name.trim(),
-      phone: phone.trim(),
+      phone: cleanPhone,
       serviceName: service.name,
       price: service.price,
       duration: service.duration,
       status: 'waiting',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: todayStr,
       type: 'online',
     };
 
@@ -460,24 +497,26 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     deleteDoc(doc(db, 'services', id)).catch((err) => console.log('Delete service error:', err));
   };
 
-  // Walk-in tokens are counter-generated and NOT added to customer's personal device myTokenIds
-  const addWalkIn = (name: string, phone: string) => {
+  const addWalkIn = (name: string, phone: string, serviceId?: string) => {
     if (name.trim().length < 2) return;
-    const todayBookingsCount =
-      bookings.filter((b) => b.status !== 'cancelled' && b.status !== 'no_show').length + 1;
-    const tokenStr = `#Q-${String(todayBookingsCount).padStart(2, '0')}`;
-    const srv = services[0] || { name: 'Haircut', price: 40, duration: 15 };
+    const todayCount =
+      todayBookings.filter((b) => b.status !== 'cancelled' && b.status !== 'no_show').length + 1;
+    const tokenStr = `#Q-${String(todayCount).padStart(2, '0')}`;
+    const chosenService =
+      services.find((s) => s.id === serviceId) ||
+      services[0] || { name: 'Haircut', price: 40, duration: 15 };
     const customId = `b-${Date.now()}`;
-    const newBkg: Booking = {
+    const newBkg: any = {
       id: customId,
       token: tokenStr,
       name: name.trim(),
       phone: phone.trim() || '8252870053',
-      serviceName: srv.name,
-      price: srv.price,
-      duration: srv.duration,
+      serviceName: chosenService.name,
+      price: chosenService.price,
+      duration: chosenService.duration,
       status: 'waiting',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: todayStr,
       type: 'walk_in',
     };
 
@@ -485,7 +524,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const seatCustomer = (bookingId: string, chairId: 1 | 2) => {
-    const occupiedBooking = bookings.find(
+    const occupiedBooking = todayBookings.find(
       (b) => b.status === 'in_service' && b.chairId === chairId
     );
     if (occupiedBooking) {
@@ -522,7 +561,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       chairId: null,
     }).catch((err) => console.log('Complete booking error:', err));
 
-    const todayStr = new Date().toISOString().split('T')[0];
     const earningId = 'e_' + Date.now();
     const newEarning: EarningRecord = {
       id: earningId,
@@ -604,7 +642,6 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const addManualEarning = (desc: string, amount: number, method: 'CASH' | 'UPI') => {
-    const todayStr = new Date().toISOString().split('T')[0];
     const earningId = 'man_' + Date.now();
     const newEarning: EarningRecord = {
       id: earningId,
