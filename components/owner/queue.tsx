@@ -4,6 +4,7 @@ import { ScrollView, View, Text, TouchableOpacity, TextInput, StyleSheet, Linkin
 import { useSalon } from '../../context/SalonContext';
 import { getTheme } from '../../constants/theme';
 import { ChatIcon } from '../../components/common/ChatIcon';
+import { OwnerWalkInCard } from './WalkInCard';
 
 export const OwnerQueuePage = () => {
   const { isDarkMode, isHindi, waitingQueue, addWalkIn, seatCustomer, markNoShow } = useSalon();
