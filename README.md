@@ -1,49 +1,148 @@
-# Monu Gents Parlour — Queue & Salon Management App
+# Monu Gents Parlour — Real-Time Queue & Salon Management App
 
-A React Native (Expo) + Firebase Firestore queue, chair, rate card, and earnings management application built for **Monu Gents Parlour** (Azadnagar, Gomoh, Dhanbad, Jharkhand).
+A real-time **React Native (Expo) + TypeScript + Firebase Firestore** queue, 2-chair floor control, rate card, and revenue reporting application built for **Monu Gents Parlour** (Azadnagar, Gomoh, Dhanbad, Jharkhand).
+
+- **Live Web App:** https://monu-gents-parlour-6skd42rlb-work-sphere6.vercel.app
+- **GitHub Repository:** https://github.com/rajmahto/monu-gents-parlour
+
+---
+
+## System Architecture
+
+```text
++-------------------------------------------------------------------+
+|                        CLIENT LAYER (Expo)                        |
+|                                                                   |
+|   +---------------------------+   +---------------------------+   |
+|   |       CUSTOMER VIEW       |   |       OWNER CONSOLE       |   |
+|   |  - Home (2 Chairs + Wait) |   |  - Floor (2-Chair Billing)|   |
+|   |  - Services (Rate Card)   |   |  - Queue (Walk-In + Seat) |   |
+|   |  - My Token (Pass + Rate) |   |  - Earnings (CSV Export)  |   |
+|   |  - Store & Directory      |   |  - Settings (Rates/Phone) |   |
+|   +-------------+-------------+   +-------------+-------------+   |
+|                 |                               |                 |
+|                 +---------------+---------------+                 |
+|                                 |                                 |
+|             +-------------------+-------------------+             |
+|             |       SalonContext (State Layer)      |             |
+|             |  - YYYY-MM-DD daily reset & guards  |             |
+|             |  - 2-chair & queue wait estimator   |             |
+|             +---------+-------------------+---------+             |
+|                       |                   |                       |
+|    Local Device Storage                   Realtime Cloud Sync       |
+|  (@react-native-async-storage)          (Firebase Firestore)      |
++-----------------------+-------------------+-----------------------+
+                        |                   |
+                        v                   v
+            +-----------------------+   +-----------------------+
+            |  Per-Device Token IDs |   |   Firestore Collections|
+            |  & Dismissed Cards    |   | - bookings            |
+            +-----------------------+   | - services            |
+                                        | - earnings            |
+                                        | - reviews             |
+                                        | - settings/salonData  |
+                                        +-----------------------+
+```
+
+### How Data Flows
+
+1. **Realtime Sync (`onSnapshot`):** `SalonContext` listens to `bookings`, `services`, `earnings`, `reviews`, and `settings/salonData` in Firebase Firestore so customer and owner screens stay updated without manual refresh.
+2. **Per-Device Pass Scoping:** Customer token IDs and dismissed completed cards are persisted locally on the customer's device via `AsyncStorage` so each phone only sees its own active pass (`#Q-01`, `#Q-02`, ...), while the owner sees the full live queue.
+3. **Date-Scoped Daily Operations:** Tokens and daily counters (`#Q-01` onwards) are scoped by local date (`YYYY-MM-DD`), keeping each day's queue clean and preventing duplicate active tokens for the same phone number on the same day.
+4. **Smart Estimated Wait Time:** Calculated dynamically using active chair occupancy (`Chair 01` & `Chair 02`), ahead-of-line queue position, and service durations.
+
+---
 
 ## Key Features
 
 ### Customer Experience
-- **Live Queue & Estimated Wait Time:** Real-time visibility into 2-chair occupancy, waiting queue count, and estimated wait time on Home and Services screens.
-- **Per-Device Active Passes:** Tokens booked on a device are persisted locally (`AsyncStorage`) so each customer only sees their own active pass (`#Q-01`, `#Q-02`, ...).
-- **Token Cancellation & Completed Card Dismiss:** Customers can cancel waiting tokens directly or dismiss completed cards (`✕`) after/without rating.
-- **Ratings & Store Directory:** Submit star ratings/feedback, view parlour photos, and open Google Maps, Instagram, YouTube, or direct call actions.
-- **Bilingual Support:** English and Hindi (`हिंदी`) support across customer and owner views.
+
+- **Live Chairs & Wait Time (`Home` & `Services`):** Check whether Chair 1 and Chair 2 are vacant or occupied, see current queue count, and view live estimated wait time before booking.
+- **Service Selection & Token Booking (`Services`):** Browse active services with pricing and estimated duration, enter name and 10-digit mobile number, and generate a queue token.
+- **Personal Token Pass (`My Token`):** Track queue position, live estimated wait, call the salon, cancel a waiting token, submit star ratings/feedback, or dismiss completed cards (`✕`).
+- **Store & Directory (`Store`):** View salon address, hours, editable contact number, parlour photo gallery (with camera/gallery upload), ratings summary, and links for Google Maps, Instagram, and YouTube.
+- **Hindi & English Support:** Switch between English and Hindi (`हिंदी`).
 
 ### Owner Admin Console
-- **2-Chair Command Center (`Floor`):** Toggle shop open/closed status (`isOnline`), view active customers on Chair 01 and Chair 02, adjust final prices, choose payment mode (`CASH` / `UPI`), and complete services.
-- **Walk-In & Live Queue (`Queue`):** Generate walk-in tokens with active service selection (`OwnerWalkInCard`), view queue position & estimated wait, call customers, mark no-show/skip, or seat customers on Chair 1 / Chair 2.
-- **Earnings & Reports (`Earnings`):** Track revenue across `TODAY`, `WEEK`, `MONTH`, and `YEAR` with Cash/UPI split, per-chair stats, dynamic **Service Summary** based on active services, ledger history, and CSV export including monthly and yearly summaries.
-- **Settings & Rate Card (`Settings`):** Manage services (add, adjust price `+/-`, delete), update salon contact number, configure Google Maps / Instagram / YouTube links, update hero portrait, and change admin password.
 
-## Tech Stack
-- **Frontend:** React Native, Expo, TypeScript
-- **Backend / Realtime DB:** Firebase Firestore
-- **Local Persistence:** `@react-native-async-storage/async-storage`
+- **2-Chair Command Center (`Floor`):** Toggle shop open/closed status (`isOnline`), view active customers on Chair 01 and Chair 02, edit final prices, pick `CASH` or `UPI`, and mark services complete.
+- **Walk-In & Queue Control (`Queue`):** Generate walk-in tokens with active service selection (`OwnerWalkInCard`), check queue position and wait estimates, call customers, skip/no-show, or seat customers on Chair 1 or Chair 2.
+- **Earnings & Multi-Period Reports (`Earnings`):** View revenue across `TODAY`, `WEEK`, `MONTH`, and `YEAR` with Cash/UPI split, per-chair counts/revenue, dynamic **Service Summary** based on active services, ledger history, and CSV report export (including month-wise and year-wise summaries).
+- **Rate Card & Shop Settings (`Settings`):** Add new services, adjust prices (`-` / `+`), delete services, update salon contact number, update social/map links, manage hero portrait, and change admin password.
 
-## Project Structure
+---
+
+## Screenshots
+
+> Tip: Create a `screenshots/` folder in the repository root and place your app screenshots there so they render directly on GitHub.
+
+| Screen | Preview Path | Description |
+| :--- | :--- | :--- |
+| **Owner Console — Earnings & Dynamic Service Summary** | `screenshots/owner-earnings-dynamic.png` | Revenue summary, Cash/UPI breakdown, chair counts, and dynamic active service cards. |
+| **Owner Console — Rate Card & Active Services** | `screenshots/owner-services.png` | Active services list (`Hair colour`, `Haircut`, etc.) and Add New Service form. |
+| **Customer — Active Passes & Rating Card** | `screenshots/customer-active-passes.png` | Token pass status, estimated wait time, rating stars, and completed card dismissal. |
+
+---
+
+## Folder Structure
 
 ```text
-├── app/
+monu-gents-parlour/
+├── app/                          # App routes / entry screens (Expo Router / layout)
+├── assets/                       # Static app icons, splash screen, and media
 ├── components/
-│   ├── common/
+│   ├── common/                   # Shared UI helpers & icons (e.g., ChatIcon.tsx)
 │   ├── customer/
-│   │   ├── details.tsx
-│   │   ├── home.tsx
-│   │   ├── services.tsx
-│   │   └── token.tsx
+│   │   ├── CustomerBottomNav.tsx # Customer bottom tab bar
+│   │   ├── CustomerView.tsx      # Customer view container & tab switcher
+│   │   ├── details.tsx           # Store info, gallery, ratings & social links
+│   │   ├── home.tsx              # Hero banner, 2-chair status & live wait time
+│   │   ├── services.tsx          # Rate card selection & token booking form
+│   │   └── token.tsx             # Active token pass, wait time, cancel & review
 │   └── owner/
-│       ├── earnings.tsx
-│       ├── floor.tsx
-│       ├── queue.tsx
-│       ├── settings.tsx
-│       └── WalkInCard.tsx
+│       ├── earnings.tsx          # Period filters, dynamic service summary & CSV export
+│       ├── floor.tsx             # Shop open/close switch & 2-chair billing modal
+│       ├── OwnerBottomNav.tsx    # Owner bottom tab bar
+│       ├── OwnerPanel.tsx        # Owner console container
+│       ├── queue.tsx             # Walk-in card, live waiting queue & seat controls
+│       ├── rates.tsx             # Rate management view (if used separately)
+│       ├── settings.tsx          # Language, contact number, services, links & password
+│       └── WalkInCard.tsx        # Walk-in token generator with service chips
 ├── config/
-│   └── firebase.ts
+│   └── firebase.ts               # Firebase initialization & Firestore db export
 ├── constants/
-│   └── theme.ts
+│   └── theme.ts                  # Light & dark theme color tokens
 ├── context/
-│   └── SalonContext.tsx
-└── types/
-    └── database.ts
+│   └── SalonContext.tsx          # Global store, Firestore listeners & business logic
+├── types/
+│   └── database.ts               # TypeScript interfaces for Booking, ServiceItem, etc.
+├── package.json
+└── README.md
+```
+
+---
+
+## Local Setup & Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/rajmahto/monu-gents-parlour.git](https://github.com/rajmahto/monu-gents-parlour.git)
+   cd monu-gents-parlour
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure Firebase Firestore:**
+   Update `config/firebase.ts` with your Firebase project credentials and ensure Firestore is enabled in the Firebase Console.
+
+4. **Run the project:**
+   ```bash
+   npx expo start
+   ```
+   - Press `w` to open in the web browser.
+   - Scan the QR code with **Expo Go** to test on an Android/iOS device.
+
+---
