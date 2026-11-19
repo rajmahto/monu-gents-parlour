@@ -1,13 +1,30 @@
 // components/owner/floor.tsx
 import React, { useState } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, TextInput, StyleSheet, Switch, Modal } from 'react-native';
+import {
+  ScrollView,
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  Switch,
+  Modal,
+} from 'react-native';
 import { useSalon } from '../../context/SalonContext';
 import { getTheme } from '../../constants/theme';
 import { Booking } from '../../types/database';
 import { ChatIcon } from '../../components/common/ChatIcon';
 
 export const OwnerFloorPage = () => {
-  const { isDarkMode, isOnline, setIsOnline, isHindi, chair1Booking, chair2Booking, completeService } = useSalon();
+  const {
+    isDarkMode,
+    isOnline,
+    setIsOnline,
+    isHindi,
+    chair1Booking,
+    chair2Booking,
+    completeService,
+  } = useSalon() as any;
 
   const theme = getTheme(isDarkMode);
   const dynamicBorderColor = isDarkMode ? '#3F3F46' : '#E4E4E7';
@@ -17,7 +34,6 @@ export const OwnerFloorPage = () => {
   const [chair1PaymentMethod, setChair1PaymentMethod] = useState<'CASH' | 'UPI'>('CASH');
   const [chair2PaymentMethod, setChair2PaymentMethod] = useState<'CASH' | 'UPI'>('CASH');
 
-  // Confirmation Modal State
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<{
     chairNum: 1 | 2;
@@ -29,7 +45,11 @@ export const OwnerFloorPage = () => {
   const handleTriggerComplete = (chairNum: 1 | 2, booking: Booking) => {
     const override = chairNum === 1 ? chair1PriceOverride : chair2PriceOverride;
     const method = chairNum === 1 ? chair1PaymentMethod : chair2PaymentMethod;
-    const finalPrice = override ? Number(override) : booking.price;
+    const parsedOverride = Number(override);
+    const finalPrice =
+      override.trim() !== '' && !Number.isNaN(parsedOverride) && parsedOverride >= 0
+        ? parsedOverride
+        : booking.price;
 
     setPendingAction({ chairNum, booking, price: finalPrice, method });
     setConfirmModalVisible(true);
@@ -39,7 +59,7 @@ export const OwnerFloorPage = () => {
     if (!pendingAction) return;
     const { chairNum, booking, price, method } = pendingAction;
 
-    completeService({ ...booking, price }, method);
+    completeService({ ...booking, price }, method, chairNum);
 
     if (chairNum === 1) setChair1PriceOverride('');
     else setChair2PriceOverride('');
@@ -51,9 +71,19 @@ export const OwnerFloorPage = () => {
   return (
     <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
       {/* Shop Status Banner */}
-      <View style={[styles.shopStatusBanner, { backgroundColor: theme.card, borderColor: dynamicBorderColor, borderWidth: 1 }]}>
+      <View
+        style={[
+          styles.shopStatusBanner,
+          { backgroundColor: theme.card, borderColor: dynamicBorderColor, borderWidth: 1 },
+        ]}
+      >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
-          <View style={[styles.statusDotLarge, { backgroundColor: isOnline ? theme.green : theme.red }]} />
+          <View
+            style={[
+              styles.statusDotLarge,
+              { backgroundColor: isOnline ? theme.green : theme.red },
+            ]}
+          />
           <View style={{ flex: 1 }}>
             <Text style={[styles.bannerTitle, { color: theme.text }]}>
               {isOnline
@@ -94,7 +124,13 @@ export const OwnerFloorPage = () => {
         const paymentMethod = num === 1 ? chair1PaymentMethod : chair2PaymentMethod;
 
         return (
-          <View key={num} style={[styles.ownerCard, { backgroundColor: theme.card, borderColor: dynamicBorderColor }]}>
+          <View
+            key={num}
+            style={[
+              styles.ownerCard,
+              { backgroundColor: theme.card, borderColor: dynamicBorderColor },
+            ]}
+          >
             <View style={styles.rowBetween}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <ChatIcon name="chair" size={18} color={theme.text} />
@@ -102,8 +138,19 @@ export const OwnerFloorPage = () => {
                   {isHindi ? `कुर्सी 0${num}` : `CHAIR 0${num}`}
                 </Text>
               </View>
-              <View style={[styles.miniStatusBadge, { backgroundColor: cBooking ? theme.redSoft : theme.greenSoft }]}>
-                <Text style={{ fontSize: 11, fontWeight: '800', color: cBooking ? theme.red : theme.green }}>
+              <View
+                style={[
+                  styles.miniStatusBadge,
+                  { backgroundColor: cBooking ? theme.redSoft : theme.greenSoft },
+                ]}
+              >
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: '800',
+                    color: cBooking ? theme.red : theme.green,
+                  }}
+                >
                   {cBooking
                     ? `${isHindi ? 'व्यस्त' : 'BUSY'} • ${cBooking.token}`
                     : isHindi
@@ -115,27 +162,45 @@ export const OwnerFloorPage = () => {
 
             {cBooking ? (
               <View style={{ marginTop: 16, gap: 12 }}>
-                <View style={[styles.customerBoxHighlight, { backgroundColor: theme.subCard, borderColor: dynamicBorderColor }]}>
-                  <Text style={[styles.ownerCustName, { color: theme.text }]}>{cBooking.name}</Text>
+                <View
+                  style={[
+                    styles.customerBoxHighlight,
+                    { backgroundColor: theme.subCard, borderColor: dynamicBorderColor },
+                  ]}
+                >
+                  <Text style={[styles.ownerCustName, { color: theme.text }]}>
+                    {cBooking.name}
+                  </Text>
                   <Text style={[styles.ownerCustMeta, { color: theme.subText }]}>
                     {cBooking.serviceName} • 📞 {cBooking.phone}
                   </Text>
                 </View>
 
-                <View style={[styles.priceEditBox, { backgroundColor: theme.subCard, borderColor: dynamicBorderColor }]}>
+                <View
+                  style={[
+                    styles.priceEditBox,
+                    { backgroundColor: theme.subCard, borderColor: dynamicBorderColor },
+                  ]}
+                >
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 10, fontWeight: '800', color: theme.muted }}>
                       {isHindi ? 'रकम जांचें / बदलें (₹)' : 'CONFIRM / EDIT PRICE (₹)'}
                     </Text>
                     <TextInput
-                      style={{ fontSize: 20, fontWeight: '900', color: theme.text, paddingVertical: 4 }}
+                      style={{
+                        fontSize: 20,
+                        fontWeight: '900',
+                        color: theme.text,
+                        paddingVertical: 4,
+                      }}
                       keyboardType="numeric"
                       placeholder={String(cBooking.price)}
                       placeholderTextColor={theme.muted}
                       value={priceOverride}
                       onChangeText={(val) => {
-                        if (num === 1) setChair1PriceOverride(val);
-                        else setChair2PriceOverride(val);
+                        const sanitized = val.replace(/[^0-9]/g, '');
+                        if (num === 1) setChair1PriceOverride(sanitized);
+                        else setChair2PriceOverride(sanitized);
                       }}
                     />
                   </View>
@@ -155,7 +220,13 @@ export const OwnerFloorPage = () => {
                         else setChair2PaymentMethod('CASH');
                       }}
                     >
-                      <Text style={{ fontSize: 11, fontWeight: '900', color: paymentMethod === 'CASH' ? '#FFFFFF' : theme.text }}>
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: '900',
+                          color: paymentMethod === 'CASH' ? '#FFFFFF' : theme.text,
+                        }}
+                      >
                         {isHindi ? 'नकद (CASH)' : 'CASH'}
                       </Text>
                     </TouchableOpacity>
@@ -174,7 +245,13 @@ export const OwnerFloorPage = () => {
                         else setChair2PaymentMethod('UPI');
                       }}
                     >
-                      <Text style={{ fontSize: 11, fontWeight: '900', color: paymentMethod === 'UPI' ? theme.primaryBtnText : theme.text }}>
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: '900',
+                          color: paymentMethod === 'UPI' ? theme.primaryBtnText : theme.text,
+                        }}
+                      >
                         UPI
                       </Text>
                     </TouchableOpacity>
@@ -191,7 +268,12 @@ export const OwnerFloorPage = () => {
                 </TouchableOpacity>
               </View>
             ) : (
-              <View style={[styles.vacantBox, { backgroundColor: theme.subCard, borderColor: dynamicBorderColor }]}>
+              <View
+                style={[
+                  styles.vacantBox,
+                  { backgroundColor: theme.subCard, borderColor: dynamicBorderColor },
+                ]}
+              >
                 <Text style={[styles.emptyText, { color: theme.muted }]}>
                   {isHindi
                     ? 'कुर्सी खाली है। कतार (Queue) टैब से ग्राहक को यहाँ बैठाएं।'
@@ -206,16 +288,34 @@ export const OwnerFloorPage = () => {
       {/* Secure Confirmation Modal */}
       <Modal visible={confirmModalVisible} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.card, borderColor: dynamicBorderColor }]}>
+          <View
+            style={[
+              styles.modalSheet,
+              { backgroundColor: theme.card, borderColor: dynamicBorderColor },
+            ]}
+          >
             <Text style={{ fontSize: 20, fontWeight: '900', color: theme.text, marginBottom: 8 }}>
               {isHindi ? 'पेमेंट और सर्विस कन्फर्म करें' : 'Confirm Completion'}
             </Text>
-            <Text style={{ fontSize: 13, color: theme.subText, fontWeight: '600', lineHeight: 18, marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 13,
+                color: theme.subText,
+                fontWeight: '600',
+                lineHeight: 18,
+                marginBottom: 20,
+              }}
+            >
               {isHindi ? 'ग्राहक: ' : 'You are about to complete service for '}
-              <Text style={{ fontWeight: '900', color: theme.text }}>{pendingAction?.booking.name}</Text> ({pendingAction?.booking.token}).
+              <Text style={{ fontWeight: '900', color: theme.text }}>
+                {pendingAction?.booking.name}
+              </Text>{' '}
+              ({pendingAction?.booking.token}).
               {'\n\n'}
               {isHindi ? 'कुल रकम: ' : 'Amount: '}
-              <Text style={{ fontWeight: '900', color: '#10B981' }}>₹{pendingAction?.price}</Text>{' '}
+              <Text style={{ fontWeight: '900', color: '#10B981' }}>
+                ₹{pendingAction?.price}
+              </Text>{' '}
               {isHindi ? 'माध्यम: ' : 'via '}
               <Text style={{ fontWeight: '900', color: theme.text }}>
                 {pendingAction?.method === 'CASH' && isHindi ? 'नकद (CASH)' : pendingAction?.method}
@@ -224,7 +324,14 @@ export const OwnerFloorPage = () => {
 
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <TouchableOpacity
-                style={[styles.modalBtnCancel, { backgroundColor: theme.subCard, borderColor: dynamicBorderColor, borderWidth: 1 }]}
+                style={[
+                  styles.modalBtnCancel,
+                  {
+                    backgroundColor: theme.subCard,
+                    borderColor: dynamicBorderColor,
+                    borderWidth: 1,
+                  },
+                ]}
                 onPress={() => {
                   setConfirmModalVisible(false);
                   setPendingAction(null);

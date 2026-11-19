@@ -121,30 +121,37 @@ export const CustomerDetailsPage = ({ onOpenOwner }: { onOpenOwner: () => void }
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.cardBox, { backgroundColor: theme.card, borderColor: dynamicBorderColor }]}>
+      <View
+        style={[
+          styles.cardBox,
+          { backgroundColor: theme.card, borderColor: dynamicBorderColor },
+        ]}
+      >
         <Text style={[styles.salonNameText, { color: theme.text }]}>
-          {salonInfo.name || 'MONU GENTS PARLOUR'}
+          {salonInfo?.name || 'MONU GENTS PARLOUR'}
         </Text>
 
         <View style={styles.infoRowBlock}>
           <View style={styles.iconInfoRow}>
             <ChatIcon name="store" size={15} color={theme.subText} />
             <Text style={[styles.infoRow, { color: theme.subText }]}>
-              {salonInfo.address || 'Azadnagar, Gomoh, Dhanbad, Jharkhand'}
+              {salonInfo?.address || 'Azadnagar, Gomoh, Dhanbad, Jharkhand'}
             </Text>
           </View>
 
-          <View style={styles.iconInfoRow}>
-            <ChatIcon name="phone" size={15} color={theme.subText} />
-            <Text style={[styles.infoRow, { color: theme.subText }]}>
-              +91 {salonInfo.phone || '8252870053'}
-            </Text>
-          </View>
+          {salonInfo?.phone && (
+            <View style={styles.iconInfoRow}>
+              <ChatIcon name="phone" size={15} color={theme.subText} />
+              <Text style={[styles.infoRow, { color: theme.subText }]}>
+                +91 {salonInfo.phone}
+              </Text>
+            </View>
+          )}
 
           <View style={styles.iconInfoRow}>
             <ChatIcon name="calendar" size={15} color={theme.subText} />
             <Text style={[styles.infoRow, { color: theme.subText }]}>
-              {salonInfo.hours || '08:00 AM - 09:00 PM'} • Open All Days
+              {salonInfo?.hours || '08:00 AM - 09:00 PM'} • {salonInfo?.closingDay || 'Open All Days'}
             </Text>
           </View>
         </View>
@@ -169,7 +176,11 @@ export const CustomerDetailsPage = ({ onOpenOwner }: { onOpenOwner: () => void }
               styles.actionPillBtn,
               { backgroundColor: theme.subCard, borderColor: dynamicBorderColor },
             ]}
-            onPress={() => Linking.openURL(`tel:${salonInfo.phone || '8252870053'}`)}
+            onPress={() => {
+              if (salonInfo?.phone) {
+                Linking.openURL(`tel:${salonInfo.phone}`);
+              }
+            }}
             activeOpacity={0.85}
           >
             <ChatIcon name="phone" size={14} color={theme.text} />
@@ -322,7 +333,15 @@ export const CustomerDetailsPage = ({ onOpenOwner }: { onOpenOwner: () => void }
       {reviews.map((rev: any) => (
         <View
           key={rev.id}
-          style={[styles.cardBox, { backgroundColor: theme.card, borderColor: dynamicBorderColor, padding: 18, marginBottom: 12 }]}
+          style={[
+            styles.cardBox,
+            {
+              backgroundColor: theme.card,
+              borderColor: dynamicBorderColor,
+              padding: 18,
+              marginBottom: 12,
+            },
+          ]}
         >
           <View style={styles.rowBetween}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
